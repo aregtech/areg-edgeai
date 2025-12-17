@@ -35,7 +35,15 @@
 # Executables
 *.exe
 *.out
+*.elf
 *.app
 
 # debug information files
 *.dwo
+
+# User specific files
+*.user
+
+# other directories
+.vs/
+build/
