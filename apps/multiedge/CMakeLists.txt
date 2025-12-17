@@ -1,6 +1,5 @@
 set(AIAGENT_SRC)
 set(AIAGENT_HDR)
-set(AIAGENT_RES)
 set(AIAGENT_UI)
 set(AIAGENT_TRANS)
 
@@ -8,10 +7,16 @@ set(EDGEDEVICE_SRC)
 set(EDGEDEVICE_HDR)
 set(EDGEDEVICE_RES)
 set(EDGEDEVICE_UI)
-set(EDGEDEVICE_TRANS)
 
-set(AIAGENT_BASE    "${CMAKE_CURRENT_LIST_DIR}/aiagent")
-set(EDGEDEVICE_BASE "${CMAKE_CURRENT_LIST_DIR}/edgedevice")
+set(MULTIEDGE_RES)
+set(MULTIEDGE_TRANS)
 
-include("${AIAGENT_BASE}/CMakeLists.txt")
-include("${EDGEDEVICE_BASE}/CMakeLists.txt")
+set(MULTIEDGE_RESOURCE      "${CMAKE_CURRENT_LIST_DIR}/resources")
+set(MULTIEDGE_EDGEDEVICE    "${CMAKE_CURRENT_LIST_DIR}/edgedevice")
+set(MULTIEDGE_AIAGENT       "${CMAKE_CURRENT_LIST_DIR}/aiagent")
+
+set(PROJECT_SOURCES)
+
+include("${MULTIEDGE_RESOURCE}/CMakeLists.txt")
+include("${MULTIEDGE_EDGEDEVICE}/CMakeLists.txt")
+include("${MULTIEDGE_AIAGENT}/CMakeLists.txt")

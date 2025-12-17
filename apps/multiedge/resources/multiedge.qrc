@@ -1,0 +1,6 @@
+<RCC>
+    <qresource lang="multiedge-icons" prefix="/icons">
+    </qresource>
+    <qresource lang="multiedge-data" prefix="/data">
+    </qresource>
+</RCC>
