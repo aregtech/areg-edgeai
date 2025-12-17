@@ -1,4 +1,4 @@
-#include "edgeconsumer.hpp"
+#include "multiedge/edgedevice/edgedevice.hpp"
 
 #include <QApplication>
 #include <QLocale>
@@ -11,13 +11,15 @@ int main(int argc, char *argv[])
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
     for (const QString &locale : uiLanguages) {
-        const QString baseName = "areg-edgeai_" + QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName)) {
+        const QString baseName = "multiedge_" + QLocale(locale).name();
+        if (translator.load(":/resource/" + baseName)) {
             a.installTranslator(&translator);
             break;
         }
     }
-    EdgeConsumer w;
+
+    a.setApplicationName("Edge Device");
+    EdgeDevice w;
     w.show();
     return a.exec();
 }

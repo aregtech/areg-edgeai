@@ -42,6 +42,7 @@ if (NOT areg_FOUND)
 endif()
 
 include(${AREG_SDK_ROOT}/areg.cmake)
+set(AREG_RESUORCES "${AREG_FRAMEWORK}/areg/resources")
 
 message(STATUS "-------------------- CMakeLists Status Report Begin --------------------")
 message(STATUS "AREG-EDGEAI: >>> Qt Version = \'${QT_VERSION_MAJOR}\'")
