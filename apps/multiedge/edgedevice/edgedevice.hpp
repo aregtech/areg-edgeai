@@ -29,7 +29,13 @@ class EdgeDevice;
 }
 QT_END_NAMESPACE
 
+class QPushButton;
+class QPlainTextEdit;
+class QLineEdit;
+class QTableView;
 class QTabWidget;
+class QToolButton;
+class QWidget;
 
 class EdgeDevice : public QDialog
 {
@@ -41,9 +47,22 @@ public:
 
 private:
 
-    inline QTabWidget* ctrlTab() const;
+    inline QWidget* wndConnect(void) const;
+    inline QWidget* wndChat(void) const;
+    inline QPushButton* ctrlConnect(void) const;
+    inline QLineEdit* ctrlAddress(void) const;
+    inline QLineEdit* ctrlPort(void) const;
+    inline QLineEdit* ctrlName(void) const;
+    inline QTableView* ctrlTable(void) const;
+    inline QPlainTextEdit* ctrlQuestion(void) const;
+    inline QToolButton* ctrlSend(void) const;
+    inline QPushButton* ctrlClose(void) const;
+
+    void setupData(void);
 
 private:
     Ui::EdgeDevice*     ui;
+    QString             mAddress;
+    uint16_t            mPort;
 };
 #endif // MULTIEDGE_EDGEDEVICE_EDGEDEVICE_HPP

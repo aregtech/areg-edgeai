@@ -31,15 +31,17 @@ int main(int argc, char *argv[])
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages) {
+    for (const QString &locale : uiLanguages)
+    {
         const QString baseName = "multiedge_" + QLocale(locale).name();
-        if (translator.load(":/resource/" + baseName)) {
+        if (translator.load(":/resource/" + baseName))
+        {
             a.installTranslator(&translator);
             break;
         }
     }
 
-    Application::initApplication();
+    Application::initApplication(true, true, false);
 
     a.setApplicationName("Edge Device");
     EdgeDevice w;

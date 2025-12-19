@@ -36,13 +36,6 @@ class AgentConsumer : public Component
 {
 
     Q_OBJECT
-//////////////////////////////////////////////////////////////////////////
-// Internal types and constants
-//////////////////////////////////////////////////////////////////////////
-    static constexpr std::string_view AGENT_THREAD  {"AgentThread"};        //!< The name of the AI agent consumer thread.
-    static constexpr std::string_view MODEL_NAME    {"EdgeDevice"};         //!< The name of the model.
-    static constexpr std::string_view DEFAULT_PREFIX{"EdgeAIConsumer"};     //!< The prefix of the edge AI consumer name.
-    static constexpr std::string_view AGENT_SERVICE {"MultiEdgeProvider"};  //!< The multi-edge service provider name.
 
 //////////////////////////////////////////////////////////////////////////
 // Static methods

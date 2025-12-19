@@ -17,9 +17,13 @@
 #include "multiedge/edgedevice/edgedevice.hpp"
 #include "ui/ui_EdgeDevice.h"
 
+#include "areg/ipc/ConnectionConfiguration.hpp"
+
 EdgeDevice::EdgeDevice(QWidget *parent)
-    : QDialog(parent)
-    , ui(new Ui::EdgeDevice)
+    : QDialog   (parent)
+    , ui        (new Ui::EdgeDevice)
+    , mAddress  ("127.0.0.1")
+    , mPort     (8181)
 {
     ui->setupUi(this);
 }
@@ -27,4 +31,17 @@ EdgeDevice::EdgeDevice(QWidget *parent)
 EdgeDevice::~EdgeDevice()
 {
     delete ui;
+}
+
+void EdgeDevice::setupData(void)
+{
+    ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
+    if (config.isConfigured())
+    {
+        mPort   = static_cast<uint16_t>(config.getConnectionPort());
+        mAddress= config.getConnectionAddress();
+    }
+
+
+
 }
