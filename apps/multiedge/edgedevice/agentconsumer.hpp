@@ -30,9 +30,9 @@
 #include <QString>
 #include <string_view>
 
-class AgentConsumer : public Component
+class AgentConsumer : public QObject
+                    , public Component
                     , public MultiEdgeClientBase
-                    , public QObject
 {
 
     Q_OBJECT
@@ -47,13 +47,15 @@ public:
     static bool processVideo(uint32_t id, const QString& cmdText, const SharedBuffer& video);
 
     static NERegistry::Model createModel(const QString& name);
+    
+    static AgentConsumer* getService(void);
 
 //////////////////////////////////////////////////////////////////////////
 // Constructor / Destructor
 //////////////////////////////////////////////////////////////////////////
 public:
     AgentConsumer(const NERegistry::ComponentEntry& entry, ComponentThread& owner);
-    virtual ~AgentConsumer(void) = default;
+    virtual ~AgentConsumer(void);
 
 signals:
 
@@ -67,7 +69,7 @@ signals:
 
     void signalVideoProcessed(uint32_t id, SharedBuffer video);
 
-    void signaAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason);
+    void signalAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason);
 
 //////////////////////////////////////////////////////////////////////////
 // Overrides

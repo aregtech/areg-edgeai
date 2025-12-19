@@ -10,7 +10,7 @@
  *  with this distribution or contact us at info[at]areg.tech.
  *
  *  \copyright   © 2025 Aregtech UG. All rights reserved.
- *  \file        multiedge/resources/NEMultiEdgeSettings.hpp
+ *  \file        multiedge/resources/nemultiedgesettings.hpp
  *  \ingroup     Areg Edge AI, Edge Device
  *  \author      Artak Avetyan
  *  \brief       Edge Device Dialog.

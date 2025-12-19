@@ -1,9 +1,13 @@
 list(APPEND MULTIEDGE_TRANS
-    ${MULTIEDGE_RESOURCE}/multiedge_en_US.ts
+    "${MULTIEDGE_RESOURCE}/multiedge_en_US.ts"
 )
 
 list(APPEND MULTIEDGE_RES
-    ${MULTIEDGE_RESOURCE}/multiedge.qrc
+    "${MULTIEDGE_RESOURCE}/multiedge.qrc"
+)
+
+list(APPEND EDGEDEVICE_HDR
+    "${MULTIEDGE_RESOURCE}/nemultiedgesettings.hpp"
 )
 
 qt_create_translation(MULTIEDGE_TRANS_FILES ${CMAKE_SOURCE_DIR} ${MULTIEDGE_TRANS})
