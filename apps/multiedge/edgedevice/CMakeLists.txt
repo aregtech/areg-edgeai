@@ -15,14 +15,12 @@ list(APPEND EDGEDEVICE_HDR
 
 list(APPEND EDGEDEVICE_FILES "${MULTIEDGE_TRANS}" "${MULTIEDGE_RES}" "${EDGEDEVICE_UI}" "${EDGEDEVICE_HDR}" "${EDGEDEVICE_SRC}")
 qt_add_executable(${APP_NAME} MANUAL_FINALIZATION "${EDGEDEVICE_FILES}")
-target_link_libraries(${APP_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets areg::areg)
+target_link_libraries(${APP_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets areg::areg gen_multiedge)
 # copying log and router init files to 'bin/config'
 add_custom_command( TARGET ${APP_NAME} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy "${AREG_RESUORCES}/areg.init" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config/areg.init"
                     VERBATIM
         )
-
-
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

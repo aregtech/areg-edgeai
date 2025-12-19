@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceInterface FormatVersion="1.1.0">
+    <Overview ID="51" Name="MultiEdge" Version="1.0.0" Category="Public">
+        <Description>This service interface is used by multi-edge application, where the multiple edge devices can connect to the Edge AI agent and trigger tasks in parallel without waiting when the Edge AI is free and ready to accept next task. 
+
+Problems trying to solve:
+
+1. No need to synchronize the queue between edge devices;
+2. No need to orchestrate the queue between edge devices;
+3. Edge AI is able to receive multiple requests without synchonization;
+4. Edge AI queues and processes the requests locally;
+5. As soon as the requests is processed, the response sent to the appropriate Edge device and the responses neven mixed;
+6. The Edge devices may dynamically connect and disconnect the network, it will not adamage the system.</Description>
+    </Overview>
+    <DataTypeList>
+        <DataType ID="66" Name="eEdgeAgent" Type="Enumeration" Values="default">
+            <Description>The type of AI Edge agent.</Description>
+            <FieldList>
+                <EnumEntry ID="67" Name="AgentUnknown">
+                    <Value>0</Value>
+                    <Description>The type of Edge AI Agent is unkown</Description>
+                </EnumEntry>
+                <EnumEntry ID="68" Name="AgentLLM">
+                    <Description>The type of Edge AI Agent is LLM</Description>
+                </EnumEntry>
+                <EnumEntry ID="69" Name="AgentVLM">
+                    <Description>The type of Edge AI Agent is VLM</Description>
+                </EnumEntry>
+                <EnumEntry ID="70" Name="AgentHybrid">
+                    <Description>The type of Edge AI Agent is hybrid (LLM + VLM)</Description>
+                </EnumEntry>
+            </FieldList>
+        </DataType>
+    </DataTypeList>
+    <AttributeList>
+        <Attribute ID="52" Name="QueueSize" DataType="uint32" Notify="OnChange">
+            <Description>The current size of the queue with pending requests to process.</Description>
+        </Attribute>
+        <Attribute ID="71" Name="EdgeAgent" DataType="eEdgeAgent" Notify="OnChange">
+            <Description>The type of active Edge AI agent</Description>
+        </Attribute>
+    </AttributeList>
+    <MethodList>
+        <Method ID="53" Name="ProcessText" MethodType="Response">
+            <Description>Response sent from Edge AI to the edge device as a result of request to process a text. Valid for the LLM</Description>
+            <ParamList>
+                <Parameter ID="72" Name="sessionId" DataType="uint32">
+                    <Description>A unique ID of the session set by the edge device, received from request.</Description>
+                </Parameter>
+                <Parameter ID="73" Name="agentId" DataType="uint32">
+                    <Description>The ID of edge device received in request, it is sent back to the edge device to confirm target device that the request is processed.</Description>
+                </Parameter>
+                <Parameter ID="82" Name="textReplied" DataType="String">
+                    <Description>The text replied by the Edge AI.</Description>
+                </Parameter>
+            </ParamList>
+        </Method>
+        <Method ID="56" Name="ProcessText" MethodType="Request" Response="ProcessText">
+            <Description>The request sent by edge device to process the text.</Description>
+            <ParamList>
+                <Parameter ID="74" Name="sessionId" DataType="uint32">
+                    <Description>A unique ID of the session to distinguish the requests. The ID is sent back by the response.</Description>
+                </Parameter>
+                <Parameter ID="75" Name="agentId" DataType="uint32">
+                    <Description>The ID of edge device. It is sent back to the edge device to confirm target device that the request is processed.</Description>
+                </Parameter>
+                <Parameter ID="81" Name="textProcess" DataType="String">
+                    <Description>The text to process.</Description>
+                </Parameter>
+            </ParamList>
+        </Method>
+        <Method ID="59" Name="ProcessVideo" MethodType="Response">
+            <Description>Response of processing a video data.</Description>
+            <ParamList>
+                <Parameter ID="76" Name="sessionId" DataType="uint32">
+                    <Description>A unique ID of the session set by the edge device, received from request.</Description>
+                </Parameter>
+                <Parameter ID="77" Name="agentId" DataType="uint32">
+                    <Description>The ID of edge device received in request, it is sent back to the edge device to confirm target device that the request is processed.</Description>
+                </Parameter>
+                <Parameter ID="83" Name="dataVideo" DataType="BinaryBuffer">
+                    <Description>A response data to send back to the edge device.</Description>
+                </Parameter>
+            </ParamList>
+        </Method>
+        <Method ID="62" Name="ProcessVideo" MethodType="Request" Response="ProcessVideo">
+            <Description>Process a video data</Description>
+            <ParamList>
+                <Parameter ID="78" Name="sessionId" DataType="uint32">
+                    <Description>An ID set by edge device to process video. The ID is unique on edge device side.</Description>
+                </Parameter>
+                <Parameter ID="79" Name="agentId" DataType="bool">
+                    <Description>The ID of edge device. It is sent back to the edge device to confirm target device that the request is processed.</Description>
+                </Parameter>
+                <Parameter ID="80" Name="cmdText" DataType="String">
+                    <Description>A command as a string to request to process video data.</Description>
+                </Parameter>
+                <Parameter ID="84" Name="dataVideo" DataType="BinaryBuffer">
+                    <Description>A binary buffer of video data to process.</Description>
+                </Parameter>
+            </ParamList>
+        </Method>
+    </MethodList>
+</ServiceInterface>

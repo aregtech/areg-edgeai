@@ -7,3 +7,6 @@ list(APPEND MULTIEDGE_RES
 )
 
 qt_create_translation(MULTIEDGE_TRANS_FILES ${CMAKE_SOURCE_DIR} ${MULTIEDGE_TRANS})
+
+# add service interface files.
+addServiceInterface(gen_multiedge multiedge/resources/MultiEdge.siml)
