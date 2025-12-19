@@ -34,6 +34,44 @@ traceable, and ready for production from the start.
 
 ---
 
+## Project Building
+
+The projects in this repository are built using the
+[Areg framework](https://github.com/aregtech/areg-sdk) and
+[Qt libraries](https://www.qt.io/development/download-qt-installer-oss) for UI development.
+CMake is used as the primary build system.
+
+It is recommended to build the projects using **Qt Creator**.
+Alternatively, the projects can be built from the command line, provided that
+the required Qt packages are installed on the system.
+
+The Areg framework is **automatically downloaded and built**
+as part of the project build process.
+
+For Edge AI functionality, the project plans to integrate
+[llama.cpp](https://github.com/ggml-org/llama.cpp) as the AI engine.
+Additional AI engines or agent types may be introduced in the future.
+
+### Requirements
+
+- **C++17 compatible compiler**  
+  GCC, Clang, MSVC, or MinGW
+- **CMake 3.20 or newer**
+- **Java 17 or newer**  
+  Required for code generation tools
+- **Qt 5.12 or newer**  
+  Required for UI based projects
+
+### Supported Platforms
+
+- **Operating systems**  
+  Linux and Windows
+- **Hardware architectures**  
+  x86_64 for Edge AI engines  
+  x86, x86_64, ARM, and AArch64 for simulated Edge AI clients
+
+---
+
 ## Planned Use Cases
 
 The following use cases illustrate how Areg can be applied to Edge AI systems.
