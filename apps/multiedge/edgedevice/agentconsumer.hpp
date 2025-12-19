@@ -30,19 +30,12 @@
 #include <QString>
 #include <string_view>
 
-class AgentConsumer : public Component
+class AgentConsumer : public QObject
+                    , public Component
                     , public MultiEdgeClientBase
-                    , public QObject
 {
 
     Q_OBJECT
-//////////////////////////////////////////////////////////////////////////
-// Internal types and constants
-//////////////////////////////////////////////////////////////////////////
-    static constexpr std::string_view AGENT_THREAD  {"AgentThread"};        //!< The name of the AI agent consumer thread.
-    static constexpr std::string_view MODEL_NAME    {"EdgeDevice"};         //!< The name of the model.
-    static constexpr std::string_view DEFAULT_PREFIX{"EdgeAIConsumer"};     //!< The prefix of the edge AI consumer name.
-    static constexpr std::string_view AGENT_SERVICE {"MultiEdgeProvider"};  //!< The multi-edge service provider name.
 
 //////////////////////////////////////////////////////////////////////////
 // Static methods
@@ -54,13 +47,15 @@ public:
     static bool processVideo(uint32_t id, const QString& cmdText, const SharedBuffer& video);
 
     static NERegistry::Model createModel(const QString& name);
+    
+    static AgentConsumer* getService(void);
 
 //////////////////////////////////////////////////////////////////////////
 // Constructor / Destructor
 //////////////////////////////////////////////////////////////////////////
 public:
     AgentConsumer(const NERegistry::ComponentEntry& entry, ComponentThread& owner);
-    virtual ~AgentConsumer(void) = default;
+    virtual ~AgentConsumer(void);
 
 signals:
 
@@ -74,7 +69,7 @@ signals:
 
     void signalVideoProcessed(uint32_t id, SharedBuffer video);
 
-    void signaAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason);
+    void signalAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason);
 
 //////////////////////////////////////////////////////////////////////////
 // Overrides

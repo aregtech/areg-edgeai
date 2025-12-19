@@ -20,10 +20,14 @@
  ************************************************************************/
 
 #include "multiedge/edgedevice/agentconsumer.hpp"
+#include "multiedge/resources/NEMultiEdgeSettings.hpp"
 #include "areg/component/ComponentLoader.hpp"
 #include "areg/component/ComponentThread.hpp"
 #include "areg/base/SharedBuffer.hpp"
 #include "areg/logging/GELog.h"
+
+#include "multiedge/edgedevice/edgedevice.hpp"
+#include <QApplication>
 
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_processText);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_processVideo);
@@ -35,13 +39,13 @@ DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_responseProcessVideo);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_requestProcessTextFailed);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_requestProcessVideoFailed);
 
-String AgentConsumer::mConsumerName(NEUtilities::generateName(AgentConsumer::DEFAULT_PREFIX.data()));
+String AgentConsumer::mConsumerName;
 
 bool AgentConsumer::processText(uint32_t id, const QString& text)
 {
     LOG_SCOPE(multiedge_edgedevice_AgentConsumer_processText);
-
-    AgentConsumer* comp = static_cast<AgentConsumer*>(AgentConsumer::mConsumerName.isEmpty() ? nullptr : Component::findComponentByName(AgentConsumer::mConsumerName));
+    
+    AgentConsumer* comp = AgentConsumer::getService();
     if ((comp != nullptr) && comp->isConnected())
     {
         LOG_DBG("Sending text to agent consumer, id: %u", id);
@@ -56,8 +60,8 @@ bool AgentConsumer::processText(uint32_t id, const QString& text)
 bool AgentConsumer::processVideo(uint32_t id, const QString& cmdText, const SharedBuffer& video)
 {
     LOG_SCOPE(multiedge_edgedevice_AgentConsumer_processVideo);
-
-    AgentConsumer* comp = static_cast<AgentConsumer*>(AgentConsumer::mConsumerName.isEmpty() ? nullptr : Component::findComponentByName(AgentConsumer::mConsumerName));
+    
+    AgentConsumer* comp = AgentConsumer::getService();
     if ((comp != nullptr) && comp->isConnected())
     {
         LOG_DBG("Sending video to agent consumer, id: %u", id);
@@ -71,16 +75,21 @@ bool AgentConsumer::processVideo(uint32_t id, const QString& cmdText, const Shar
 
 NERegistry::Model AgentConsumer::createModel(const QString& name)
 {
-    NERegistry::Model model(AgentConsumer::MODEL_NAME);
+    NERegistry::Model model(NEMultiEdgeSettings::MODEL_CONSUMER);
     if (name.isEmpty() == false)
     {
         AgentConsumer::mConsumerName = name.toStdString();
-        NERegistry::ComponentThreadEntry & listThreads = model.addThread(AgentConsumer::AGENT_THREAD);
+        NERegistry::ComponentThreadEntry & listThreads = model.addThread(NEMultiEdgeSettings::AGENT_THREAD);
         NERegistry::ComponentEntry& component = listThreads.addComponent<AgentConsumer>(AgentConsumer::mConsumerName);
-        component.addDependencyService(AgentConsumer::AGENT_SERVICE);
+        component.addDependencyService(NEMultiEdgeSettings::SERVICE_PROVIDER);
     }
 
     return model;
+}
+
+AgentConsumer* AgentConsumer::getService(void)
+{
+    return static_cast<AgentConsumer*>(AgentConsumer::mConsumerName.isEmpty() ? nullptr : Component::findComponentByName(AgentConsumer::mConsumerName));    
 }
 
 AgentConsumer::AgentConsumer(const NERegistry::ComponentEntry& entry, ComponentThread& owner)
@@ -89,6 +98,16 @@ AgentConsumer::AgentConsumer(const NERegistry::ComponentEntry& entry, ComponentT
     , QObject            ( )
     , mConsumerId        (static_cast<uint32_t>(NEService::COOKIE_UNKNOWN))
 {
+    EdgeDevice* wnd = static_cast<EdgeDevice *>(QApplication::activeWindow());
+    ASSERT(wnd != nullptr);
+    QObject::connect(wnd, &EdgeDevice::slotServiceAvailable, this, &AgentConsumer::signalServiceConnected, Qt::ConnectionType::QueuedConnection);
+}
+
+AgentConsumer::~AgentConsumer(void)
+{
+    EdgeDevice* wnd = static_cast<EdgeDevice *>(QApplication::activeWindow());
+    ASSERT(wnd != nullptr);
+    QObject::disconnect(wnd, &EdgeDevice::slotServiceAvailable, this, &AgentConsumer::signalServiceConnected);
 }
 
 bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, ProxyBase& proxy)
@@ -105,9 +124,26 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
         notifyOnQueueSizeUpdate(isConnected);
         notifyOnEdgeAgentUpdate(isConnected);
         mConsumerId = isConnected ? static_cast<uint32_t>(proxy.getProxyAddress().getCookie()) : static_cast<uint32_t>(NEService::COOKIE_UNKNOWN);
-
         emit signalServiceConnected(isConnected);
-
+        
+        EdgeDevice* wnd = static_cast<EdgeDevice *>(QApplication::activeWindow());
+        ASSERT(wnd != nullptr);
+        if (isConnected)
+        {
+            connect(wnd, &EdgeDevice::slotAgentQueueSize       , this, &AgentConsumer::signalAgentQueueSize        , Qt::ConnectionType::QueuedConnection);
+            connect(wnd, &EdgeDevice::slotAgentType            , this, &AgentConsumer::signalAgentType             , Qt::ConnectionType::QueuedConnection);
+            connect(wnd, &EdgeDevice::slotTextProcessed        , this, &AgentConsumer::signalTextProcessed         , Qt::ConnectionType::QueuedConnection);
+            connect(wnd, &EdgeDevice::slotVideoProcessed       , this, &AgentConsumer::signalVideoProcessed        , Qt::ConnectionType::QueuedConnection);
+            connect(wnd, &EdgeDevice::slotAgentProcessingFailed, this, &AgentConsumer::signalAgentProcessingFailed , Qt::ConnectionType::QueuedConnection);
+        }
+        else
+        {
+            disconnect(wnd, &EdgeDevice::slotAgentQueueSize       , this, &AgentConsumer::signalAgentQueueSize);
+            disconnect(wnd, &EdgeDevice::slotAgentType            , this, &AgentConsumer::signalAgentType);
+            disconnect(wnd, &EdgeDevice::slotTextProcessed        , this, &AgentConsumer::signalTextProcessed);
+            disconnect(wnd, &EdgeDevice::slotVideoProcessed       , this, &AgentConsumer::signalVideoProcessed);
+            disconnect(wnd, &EdgeDevice::slotAgentProcessingFailed, this, &AgentConsumer::signalAgentProcessingFailed);
+        }
     }
 
     return result;
@@ -126,7 +162,7 @@ void AgentConsumer::onEdgeAgentUpdate(NEMultiEdge::eEdgeAgent EdgeAgent, NEServi
     LOG_SCOPE(multiedge_edgedevice_AgentConsumer_onEdgeAgentUpdate);
     LOG_DBG("Edge agent update, type: %s, state: %s", NEMultiEdge::getString(EdgeAgent), NEService::getString(state));
 
-    emit signalAgentType(state == NEService::eDataStateType::DataIsOK ? EdgeAgent : NEMultiEdge::eEdgeAgent::AgetnUnknown);
+    emit signalAgentType(state == NEService::eDataStateType::DataIsOK ? EdgeAgent : NEMultiEdge::eEdgeAgent::AgentUnknown);
 }
 
 void AgentConsumer::responseProcessText(unsigned int sessionId, unsigned int agentId, const String& textReplied)
@@ -142,7 +178,7 @@ void AgentConsumer::responseProcessText(unsigned int sessionId, unsigned int age
     else
     {
         LOG_ERR("Received text reply, but agentId does not match, sessionId: %u, agentId: %u", sessionId, agentId);
-        emit signaAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentLLM, NEService::eResultType::RequestInvalid);
+        emit signalAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentLLM, NEService::eResultType::RequestInvalid);
     }
 }
 
@@ -159,7 +195,7 @@ void AgentConsumer::responseProcessVideo(unsigned int sessionId, unsigned int ag
     else
     {
         LOG_ERR("Received video reply, but agentId does not match, sessionId: %u, agentId: %u", sessionId, agentId);
-        emit signaAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentVLM, NEService::eResultType::RequestInvalid);
+        emit signalAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentVLM, NEService::eResultType::RequestInvalid);
     }
 }
 
@@ -167,12 +203,12 @@ void AgentConsumer::requestProcessTextFailed(NEService::eResultType FailureReaso
 {
     LOG_SCOPE(multiedge_edgedevice_AgentConsumer_requestProcessTextFailed);
     LOG_ERR("Failed to process text, reason: %s", NEService::getString(FailureReason));
-    emit signaAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentLLM, FailureReason);
+    emit signalAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentLLM, FailureReason);
 }
 
 void AgentConsumer::requestProcessVideoFailed(NEService::eResultType FailureReason)
 {
     LOG_SCOPE(multiedge_edgedevice_AgentConsumer_requestProcessVideoFailed);
     LOG_ERR("Failed to process video, reason: %s", NEService::getString(FailureReason));
-    emit signaAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentVLM, FailureReason);
+    emit signalAgentProcessingFailed(NEMultiEdge::eEdgeAgent::AgentVLM, FailureReason);
 }
