@@ -5,12 +5,14 @@ list(APPEND EDGEDEVICE_UI
 )
 
 list(APPEND EDGEDEVICE_SRC
+    "${MULTIEDGE_EDGEDEVICE}/agentchathistory.cpp"
     "${MULTIEDGE_EDGEDEVICE}/agentconsumer.cpp"
     "${MULTIEDGE_EDGEDEVICE}/edgedevice.cpp"
     "${MULTIEDGE_EDGEDEVICE}/main.cpp"
 )
 
 list(APPEND EDGEDEVICE_HDR
+    "${MULTIEDGE_EDGEDEVICE}/agentchathistory.hpp"
     "${MULTIEDGE_EDGEDEVICE}/agentconsumer.hpp"
     "${MULTIEDGE_EDGEDEVICE}/edgedevice.hpp"
 )
