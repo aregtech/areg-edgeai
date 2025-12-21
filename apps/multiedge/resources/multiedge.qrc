@@ -1,6 +1,7 @@
 <RCC>
     <qresource lang="multiedge-icons" prefix="/icons">
+        <file alias="icon-human-question">icons/icon-human-question.svg</file>
+        <file alias="icon-robot-ai">icons/icon-robot-ai.svg</file>
     </qresource>
-    <qresource lang="multiedge-data" prefix="/data">
-    </qresource>
+    <qresource lang="multiedge-data" prefix="/data"/>
 </RCC>
