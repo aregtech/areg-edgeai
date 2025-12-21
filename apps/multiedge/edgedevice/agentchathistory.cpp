@@ -64,6 +64,8 @@ AgentChatHistory::AgentChatHistory(QObject *parent)
     , mSequence             (0u)
     , mIconHuman            (":/icons/icon-human-question")
     , mIconRobot            (":/icons/icon-robot-ai")
+    , mIconError            (":/icons/icon-error")
+    , mIconCancel           (":/icons/icon-cancel")
 {
 }
 
@@ -160,7 +162,21 @@ QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
         }
         
     case Qt::DecorationRole:
-        return (entry.chatSource == eChatSource::SourceEdgeAi ? mIconRobot : mIconHuman);
+    {
+        switch (entry.chatStatus)
+        {
+        case eMessageStatus::StatusInvalid:
+        case eMessageStatus::StatusError:
+            return mIconError;
+
+        case eMessageStatus::StatusCanceled:
+        case eMessageStatus::StatusIgnore:
+            return mIconCancel;
+
+        default:
+            return (entry.chatSource == eChatSource::SourceEdgeAi ? mIconRobot : mIconHuman);
+        }
+    }
         
     case Qt::UserRole:
         return QVariant(static_cast<int>(entry.chatSource));

@@ -107,6 +107,8 @@ private:
     uint32_t    mSequence;
     QIcon       mIconHuman;
     QIcon       mIconRobot;
+    QIcon       mIconError;
+    QIcon       mIconCancel;
 };
 
 #endif // MULTIEDGE_EDGEDEVICE_AGENTCHATHISTORY_HPP
