@@ -8,14 +8,14 @@
  *  with this distribution or contact us at info[at]areg.tech.
  *
  *  \copyright   © 2025 Aregtech UG. All rights reserved.
- *  \file        multiedge/edgedevice/edgedevice.cpp
+ *  \file        multiedge/aiagent/aiagent.cpp
  *  \ingroup     Areg Edge AI, Edge Device
  *  \author      Artak Avetyan
  *  \brief       Edge Device Dialog.
  *
  ************************************************************************/
-#include "multiedge/edgedevice/edgedevice.hpp"
-#include "ui/ui_EdgeDevice.h"
+#include "multiedge/aiagent/aiagent.hpp"
+#include "ui/ui_AIAgent.h"
 
 #include "areg/appbase/Application.hpp"
 #include "areg/base/NEUtilities.hpp"
@@ -25,12 +25,12 @@
 #include "multiedge/edgedevice/agentconsumer.hpp"
 #include "multiedge/edgedevice/agentchathistory.hpp"
 
-EdgeDevice::EdgeDevice(QWidget *parent)
+AIAgent::AIAgent(QWidget *parent)
     : QDialog   (parent)
-    , ui        (new Ui::EdgeDevice)
+    , ui        (new Ui::AIAgent)
     , mAddress  ("127.0.0.1")
     , mPort     (8181)
-    , mModel    (nullptr)
+    // , mModel    (nullptr)
 {
     ui->setupUi(this);
     setupData();
@@ -38,21 +38,21 @@ EdgeDevice::EdgeDevice(QWidget *parent)
     setupSignals();
 }
 
-EdgeDevice::~EdgeDevice()
+AIAgent::~AIAgent()
 {
     delete ui;
 }
 
-void EdgeDevice::slotAgentQueueSize(uint32_t queueSize)
+void AIAgent::slotAgentQueueSize(uint32_t queueSize)
 {
     ui->TxtQueueSize->setText(QString::number(queueSize));
 }
 
-void EdgeDevice::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
+void AIAgent::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
 {
     const QString _agents[]
     {
-        "Unknown"
+          "Unknown"
         , "LLM"
         , "VLM"
         , "Hybrid"
@@ -61,20 +61,23 @@ void EdgeDevice::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
     ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
-void EdgeDevice::slotTextProcessed(uint32_t id, QString reply)
+void AIAgent::slotTextProcessed(uint32_t id, QString reply)
 {
+#if 0
     if (mModel != nullptr)
     {
         mModel->addResponse(reply, id);
     }
+#endif
 }
 
-void EdgeDevice::slotVideoProcessed(uint32_t id, SharedBuffer video)
+void AIAgent::slotVideoProcessed(uint32_t id, SharedBuffer video)
 {
 }
 
-void EdgeDevice::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason)
+void AIAgent::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason)
 {
+#if 0
     if (mModel != nullptr)
     {
         QString text{NEMultiEdge::getString(agent)};
@@ -82,10 +85,12 @@ void EdgeDevice::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEServ
         text += NEService::getString(reason);
         mModel->addFailure(text);
     }
+#endif
 }
 
-void EdgeDevice::slotServiceAvailable(bool isConnected)
+void AIAgent::slotServiceAvailable(bool isConnected)
 {
+#if 0
     ctrlQuestion()->setEnabled(isConnected);
     ctrlSend()->setEnabled(isConnected);
     if (isConnected)
@@ -98,64 +103,50 @@ void EdgeDevice::slotServiceAvailable(bool isConnected)
         if (oldModel != nullptr)
             delete oldModel;
     }
+#endif
 }
 
-inline QWidget* EdgeDevice::wndConnect(void) const
+inline QWidget* AIAgent::wndConnect(void) const
 {
     return ui->WndConnect;
 }
 
-inline QWidget* EdgeDevice::wndChat(void) const
+inline QWidget* AIAgent::wndChat(void) const
 {
     return ui->WndChat;
 }
 
-inline QPushButton* EdgeDevice::ctrlConnect(void) const
+inline QPushButton* AIAgent::ctrlConnect(void) const
 {
     return ui->BtnConnect;
 }
 
-inline QLineEdit* EdgeDevice::ctrlAddress(void) const
+inline QLineEdit* AIAgent::ctrlAddress(void) const
 {
     return ui->RouterAddress;
 }
 
-inline QLineEdit* EdgeDevice::ctrlPort(void) const
+inline QLineEdit* AIAgent::ctrlPort(void) const
 {
     return ui->RouterPort;
 }
 
-inline QLineEdit* EdgeDevice::ctrlName(void) const
-{
-    return ui->DeviceName;
-}
-
-inline QTableView* EdgeDevice::ctrlTable(void) const
+inline QTableView* AIAgent::ctrlTable(void) const
 {
     return ui->TableHistory;
 }
 
-inline QPlainTextEdit* EdgeDevice::ctrlQuestion(void) const
-{
-    return ui->TxtAsk;
-}
-
-inline QToolButton* EdgeDevice::ctrlSend(void) const
-{
-    return ui->BtnSend;
-}
-
-inline QPushButton* EdgeDevice::ctrlClose(void) const
+inline QPushButton* AIAgent::ctrlClose(void) const
 {
     return ui->BtnClose;
 }
 
-inline QTabWidget* EdgeDevice::ctrlTab(void) const
+inline QTabWidget* AIAgent::ctrlTab(void) const
 {
     return ui->tabWidget;
 }
 
-void EdgeDevice::setupData(void)
+void AIAgent::setupData(void)
 {
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
     if (config.isConfigured())
@@ -165,33 +156,27 @@ void EdgeDevice::setupData(void)
     }
     
     String name = NEUtilities::generateName(NEMultiEdgeSettings::SERVICE_CONSUMER.data());
-    mName = QString::fromStdString(name.getData());
     ctrlAddress()->setText(mAddress);
     ctrlPort()->setText(QString::number(mPort));
-    ctrlName()->setText(mName);
     ui->TxtQueueSize->setText("N/A");
     ui->TxtAgentType->setText("N/A");
 
 }
 
-void EdgeDevice::setupWidgets(void)
+void AIAgent::setupWidgets(void)
 {
-    ctrlQuestion()->setEnabled(false);
-    ctrlSend()->setEnabled(false);
 }
 
-void EdgeDevice::setupSignals(void)
+void AIAgent::setupSignals(void)
 {
     connect(ctrlClose()     , &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close();});
-    connect(ctrlConnect()   , &QPushButton::clicked, this, &EdgeDevice::onConnectClicked);
-    connect(ctrlSend()      , &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
+    connect(ctrlConnect()   , &QPushButton::clicked, this, &AIAgent::onConnectClicked);
 }
 
-bool EdgeDevice::routerConnect(void)
+bool AIAgent::routerConnect(void)
 {
     mAddress= ctrlAddress()->text();
     mPort   = static_cast<uint16_t>(ctrlPort()->text().toUInt());
-    mName   = ctrlName()->text();
     
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
     if (config.isConfigured())
@@ -200,24 +185,27 @@ bool EdgeDevice::routerConnect(void)
         config.setConnectionPort(mPort);
         if (Application::startMessageRouting(mAddress.toStdString().c_str(), mPort))
         {
-            NERegistry::Model model = AgentConsumer::createModel(mName);
+#if 0
             VERIFY(ComponentLoader::addModelUnique(model));
             ASSERT(Application::isModelLoaded(NEMultiEdgeSettings::MODEL_CONSUMER.data()) == false);
             return Application::loadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
+#else
+            return true;
+#endif
         }
     }
     
     return false;
 }
 
-void EdgeDevice::routerDisconnect(void)
+void AIAgent::routerDisconnect(void)
 {
     Application::unloadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
     Application::stopMessageRouting();
     ComponentLoader::removeComponentModel(NEMultiEdgeSettings::MODEL_CONSUMER);
 }
 
-void EdgeDevice::onConnectClicked(bool checked)
+void AIAgent::onConnectClicked(bool checked)
 {
     if (Application::isRouterConnected() == false)
     {
@@ -225,10 +213,9 @@ void EdgeDevice::onConnectClicked(bool checked)
         {
             ctrlAddress()->setEnabled(false);
             ctrlPort()->setEnabled(false);
-            ctrlName()->setEnabled(false);
             ctrlConnect()->setText(tr("&Disconnect"));
             ctrlConnect()->setIcon(QIcon::fromTheme(QString::fromUtf8("network-offline")));
-            ctrlConnect()->setShortcut(QCoreApplication::translate("EdgeDevice", "Alt+D", nullptr));
+            ctrlConnect()->setShortcut(QCoreApplication::translate("AIAgent", "Alt+D", nullptr));
         }
         else
         {
@@ -241,24 +228,8 @@ void EdgeDevice::onConnectClicked(bool checked)
         routerDisconnect();
         ctrlAddress()->setEnabled(true);
         ctrlPort()->setEnabled(true);
-        ctrlName()->setEnabled(true);
         ctrlConnect()->setText(tr("&Connect"));
         ctrlConnect()->setIcon(QIcon::fromTheme(QString::fromUtf8("network-wireless")));
-        ctrlConnect()->setShortcut(QCoreApplication::translate("EdgeDevice", "Alt+C", nullptr));
+        ctrlConnect()->setShortcut(QCoreApplication::translate("AIAgent", "Alt+C", nullptr));
     }
-}
-
-void EdgeDevice::onSendQuestion(bool checked)
-{
-    QString question = ctrlQuestion()->toPlainText();
-    if ((question.isEmpty() == false) && (mModel != nullptr))
-    {
-        uint32_t id = mModel->addRequest(question);
-        if (AgentConsumer::processText(id, question) == false)
-        {
-            mModel->addFailure("Failed to send response to process question");
-        }
-    }
-    
-    ctrlQuestion()->setPlainText(QString());
 }
