@@ -25,26 +25,24 @@
 #include "multiedge/resources/NEMultiEdge.hpp"
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class EdgeDevice;
+class AIAgent;
 }
 QT_END_NAMESPACE
 
-class AgentChatHistory;
+// class AgentChatHistory;
 class QPushButton;
-class QPlainTextEdit;
 class QLineEdit;
 class QTableView;
 class QTabWidget;
-class QToolButton;
 class QWidget;
 
-class EdgeDevice : public QDialog
+class AIAgent : public QDialog
 {
     Q_OBJECT
 
 public:
-    EdgeDevice(QWidget *parent = nullptr);
-    ~EdgeDevice();
+    AIAgent(QWidget *parent = nullptr);
+    ~AIAgent();
     
 public slots:
     
@@ -67,18 +65,13 @@ private:
     inline QPushButton* ctrlConnect(void) const;
     inline QLineEdit* ctrlAddress(void) const;
     inline QLineEdit* ctrlPort(void) const;
-    inline QLineEdit* ctrlName(void) const;
     inline QTableView* ctrlTable(void) const;
-    inline QPlainTextEdit* ctrlQuestion(void) const;
-    inline QToolButton* ctrlSend(void) const;
     inline QPushButton* ctrlClose(void) const;
     inline QTabWidget* ctrlTab(void) const;
     
 private slots:
     
     void onConnectClicked(bool checked);
-    
-    void onSendQuestion(bool checked);
     
 private:
     void setupData(void);
@@ -92,10 +85,9 @@ private:
     void routerDisconnect(void);
 
 private:
-    Ui::EdgeDevice*     ui;
+    Ui::AIAgent*        ui;
     QString             mAddress;
     uint16_t            mPort;
-    QString             mName;
-    AgentChatHistory*   mModel;
+    // AgentChatHistory*   mModel;
 };
-#endif // MULTIEDGE_EDGEDEVICE_EDGEDEVICE_HPP
+#endif // MULTIEDGE_AIAGENT_AIAGENT_HPP

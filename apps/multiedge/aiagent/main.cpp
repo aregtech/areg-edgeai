@@ -18,7 +18,7 @@
 /************************************************************************
  * Includes
  ************************************************************************/
-#include "multiedge/edgedevice/edgedevice.hpp"
+#include "multiedge/aiagent/aiagent.hpp"
 #include "areg/appbase/Application.hpp"
 
 #include <QApplication>
@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
 
     Application::initApplication(true, true, false);
 
-    a.setApplicationName("Edge Device");
-    EdgeDevice w;
+    a.setApplicationName("Edge AI Agent");
+    AIAgent w;
     w.show();
     return a.exec();
 }

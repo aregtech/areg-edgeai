@@ -6,10 +6,13 @@ list(APPEND AIAGENT_UI
 
 list(APPEND AIAGENT_SRC
     "${MULTIEDGE_AIAGENT}/agentprovider.cpp"
+    "${MULTIEDGE_AIAGENT}/aiagent.cpp"
+    "${MULTIEDGE_AIAGENT}/main.cpp"
 )
 
 list(APPEND AIAGENT_HDR
     "${MULTIEDGE_AIAGENT}/agentprovider.hpp"
+    "${MULTIEDGE_AIAGENT}/aiagent.hpp"
 )
 
 

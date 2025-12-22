@@ -8,7 +8,7 @@
  *  with this distribution or contact us at info[at]areg.tech.
  *
  *  \copyright   © 2025 Aregtech UG. All rights reserved.
- *  \file        multiedge/edgedevice/edgedevice.hpp
+ *  \file        multiedge/edgedevice/edgedevice.cpp
  *  \ingroup     Areg Edge AI, Edge Device
  *  \author      Artak Avetyan
  *  \brief       Edge Device Dialog.
