@@ -76,6 +76,8 @@ public:
     uint32_t addRequest(const QString& question);
     
     bool addResponse(const QString& reply, uint32_t seqId);
+    
+    void addFailure(const QString& text);
 
 //////////////////////////////////////////////////////////////////////////
 // Overrides

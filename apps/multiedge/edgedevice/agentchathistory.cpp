@@ -221,8 +221,10 @@ const QString & AgentChatHistory::displayName(const sChatEntry & entry, uint64_t
 
 uint32_t AgentChatHistory::addRequest(const QString& question)
 {
+    beginInsertRows(QModelIndex(), mSequence, mSequence);
     sChatEntry entry{eChatSource::SourceHuman, question, DateTime::getNow(), eMessageStatus::StatusPending, mSequence};
     mHistory.push_back(entry);
+    endInsertRows();
     return mSequence ++;
 }
 
@@ -233,8 +235,10 @@ bool AgentChatHistory::addResponse(const QString& reply, uint32_t seqId)
     int32_t size = static_cast<int32_t>(mHistory.size());
     if (idx >= size)
     {
+        beginInsertRows(QModelIndex(), mSequence, mSequence);
         entry.chatStatus = eMessageStatus::StatusError;
         mHistory.push_back(entry);
+        endInsertRows();
     }
     else
     {
@@ -244,21 +248,35 @@ bool AgentChatHistory::addResponse(const QString& reply, uint32_t seqId)
             mHistory[idx].chatStatus = eMessageStatus::StatusReplied;
             if ((idx + 1) == size)
             {
+                beginInsertRows(QModelIndex(), mSequence, mSequence);
                 mHistory.push_back(entry);
             }
             else
             {
+                beginInsertRows(QModelIndex(), idx + 1, idx + 1);
                 mHistory.insert(mHistory.begin() + idx + 1, entry);
             }
+            
+            endInsertRows();
         }
         else
         {
+            beginInsertRows(QModelIndex(), mSequence, mSequence);
             entry.chatStatus = eMessageStatus::StatusError;
             mHistory.push_back(entry);
+            endInsertRows();
         }
     }
     
     return (entry.chatStatus == eMessageStatus::StatusReplied);
+}
+
+void AgentChatHistory::addFailure(const QString& text)
+{
+    beginInsertRows(QModelIndex(), mSequence, mSequence);
+    sChatEntry entry{eChatSource::SourceEdgeAi, text, DateTime::getNow(), eMessageStatus::StatusError, mSequence};
+    mHistory.push_back(entry);
+    endInsertRows();
 }
 
 int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)

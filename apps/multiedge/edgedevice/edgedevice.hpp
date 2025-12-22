@@ -29,6 +29,7 @@ class EdgeDevice;
 }
 QT_END_NAMESPACE
 
+class AgentChatHistory;
 class QPushButton;
 class QPlainTextEdit;
 class QLineEdit;
@@ -73,12 +74,16 @@ private:
     inline QPushButton* ctrlClose(void) const;
     inline QTabWidget* ctrlTab(void) const;
     
-private:
+private slots:
     
     void onConnectClicked(bool checked);
     
+    void onSendQuestion(bool checked);
+    
 private:
     void setupData(void);
+    
+    void setupWidgets(void);
     
     void setupSignals(void);
     
@@ -91,5 +96,6 @@ private:
     QString             mAddress;
     uint16_t            mPort;
     QString             mName;
+    AgentChatHistory*   mModel;
 };
 #endif // MULTIEDGE_EDGEDEVICE_EDGEDEVICE_HPP

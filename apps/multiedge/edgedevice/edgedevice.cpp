@@ -23,15 +23,18 @@
 #include "areg/ipc/ConnectionConfiguration.hpp"
 #include "multiedge/resources/NEMultiEdgeSettings.hpp"
 #include "multiedge/edgedevice/agentconsumer.hpp"
+#include "multiedge/edgedevice/agentchathistory.hpp"
 
 EdgeDevice::EdgeDevice(QWidget *parent)
     : QDialog   (parent)
     , ui        (new Ui::EdgeDevice)
     , mAddress  ("127.0.0.1")
     , mPort     (8181)
+    , mModel    (nullptr)
 {
     ui->setupUi(this);
     setupData();
+    setupWidgets();
     setupSignals();
 }
 
@@ -42,14 +45,28 @@ EdgeDevice::~EdgeDevice()
 
 void EdgeDevice::slotAgentQueueSize(uint32_t queueSize)
 {
+    ui->TxtQueueSize->setText(QString::number(queueSize));
 }
 
 void EdgeDevice::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
 {
+    const QString _agents[]
+    {
+        "Unknown"
+        , "LLM"
+        , "VLM"
+        , "Hybrid"
+    };
+    
+    ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
 void EdgeDevice::slotTextProcessed(uint32_t id, QString reply)
 {
+    if (mModel != nullptr)
+    {
+        mModel->addResponse(reply, id);
+    }
 }
 
 void EdgeDevice::slotVideoProcessed(uint32_t id, SharedBuffer video)
@@ -58,13 +75,28 @@ void EdgeDevice::slotVideoProcessed(uint32_t id, SharedBuffer video)
 
 void EdgeDevice::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason)
 {
+    if (mModel != nullptr)
+    {
+        QString text{NEMultiEdge::getString(agent)};
+        text += ": Failed to process a request, reason = ";
+        text += NEService::getString(reason);
+        mModel->addFailure(text);
+    }
 }
 
 void EdgeDevice::slotServiceAvailable(bool isConnected)
 {
+    ctrlQuestion()->setEnabled(isConnected);
+    ctrlSend()->setEnabled(isConnected);
     if (isConnected)
     {
         ui->tabWidget->setCurrentIndex(1);
+        AgentChatHistory* oldModel = mModel;
+        ctrlTable()->setModel(nullptr);
+        mModel = new AgentChatHistory(ctrlTable());
+        ctrlTable()->setModel(mModel);
+        if (oldModel != nullptr)
+            delete oldModel;
     }
 }
 
@@ -137,13 +169,22 @@ void EdgeDevice::setupData(void)
     ctrlAddress()->setText(mAddress);
     ctrlPort()->setText(QString::number(mPort));
     ctrlName()->setText(mName);
+    ui->TxtQueueSize->setText("N/A");
+    ui->TxtAgentType->setText("N/A");
 
+}
+
+void EdgeDevice::setupWidgets(void)
+{
+    ctrlQuestion()->setEnabled(false);
+    ctrlSend()->setEnabled(false);
 }
 
 void EdgeDevice::setupSignals(void)
 {
     connect(ctrlClose()     , &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close();});
     connect(ctrlConnect()   , &QPushButton::clicked, this, &EdgeDevice::onConnectClicked);
+    connect(ctrlSend()      , &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
 }
 
 bool EdgeDevice::routerConnect(void)
@@ -205,4 +246,19 @@ void EdgeDevice::onConnectClicked(bool checked)
         ctrlConnect()->setIcon(QIcon::fromTheme(QString::fromUtf8("network-wireless")));
         ctrlConnect()->setShortcut(QCoreApplication::translate("EdgeDevice", "Alt+C", nullptr));
     }
+}
+
+void EdgeDevice::onSendQuestion(bool checked)
+{
+    QString question = ctrlQuestion()->toPlainText();
+    if ((question.isEmpty() == false) && (mModel != nullptr))
+    {
+        uint32_t id = mModel->addRequest(question);
+        if (AgentConsumer::processText(id, question) == false)
+        {
+            mModel->addFailure("Failed to send response to process question");
+        }
+    }
+    
+    ctrlQuestion()->setPlainText(QString());
 }
