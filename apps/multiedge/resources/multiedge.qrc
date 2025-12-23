@@ -4,6 +4,8 @@
         <file alias="icon-robot-ai">icons/icon-robot-ai.svg</file>
         <file alias="icon-error">icons/icon-error.svg</file>
         <file alias="icon-cancel">icons/icon-cancel.svg</file>
+        <file alias="icon-edge-ai">icons/icon-edge-ai.svg</file>
+        <file alias="icon-edge-device">icons/icon-edge-device.svg</file>
     </qresource>
     <qresource lang="multiedge-data" prefix="/data"/>
 </RCC>

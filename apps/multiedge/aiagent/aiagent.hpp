@@ -29,7 +29,7 @@ class AIAgent;
 }
 QT_END_NAMESPACE
 
-// class AgentChatHistory;
+class AgentChatHistory;
 class QPushButton;
 class QLineEdit;
 class QTableView;
@@ -51,10 +51,12 @@ public slots:
     void slotAgentQueueSize(uint32_t queueSize);
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
+
+    void slotTextRequested(uint32_t seqId, uint32_t id, const QString& question);
     
-    void slotTextProcessed(uint32_t id, QString reply);
+    void slotTextProcessed(uint32_t seqId, uint32_t id, QString reply);
     
-    void slotVideoProcessed(uint32_t id, SharedBuffer video);
+    void slotVideoProcessed(uint32_t seqId, uint32_t id, SharedBuffer video);
     
     void slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason);
 
@@ -88,6 +90,6 @@ private:
     Ui::AIAgent*        ui;
     QString             mAddress;
     uint16_t            mPort;
-    // AgentChatHistory*   mModel;
+    AgentChatHistory*   mModel;
 };
 #endif // MULTIEDGE_AIAGENT_AIAGENT_HPP

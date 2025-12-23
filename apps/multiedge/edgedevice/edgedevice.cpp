@@ -177,6 +177,9 @@ void EdgeDevice::setupData(void)
 
 void EdgeDevice::setupWidgets(void)
 {
+    QIcon icon(":/icons/icon-edge-device");
+    setWindowIcon(icon);
+
     ctrlQuestion()->setEnabled(false);
     ctrlSend()->setEnabled(false);
 }
