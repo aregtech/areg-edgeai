@@ -20,10 +20,20 @@
 #include "areg/appbase/Application.hpp"
 #include "areg/base/NEUtilities.hpp"
 #include "areg/component/ComponentLoader.hpp"
+#include "areg/component/NEService.hpp"
 #include "areg/ipc/ConnectionConfiguration.hpp"
-#include "multiedge/resources/NEMultiEdgeSettings.hpp"
-#include "multiedge/edgedevice/agentconsumer.hpp"
-#include "multiedge/edgedevice/agentchathistory.hpp"
+#include "multiedge/resources/nemultiedgesettings.hpp"
+#include "multiedge/aiagent/agentprovider.hpp"
+
+#include <any>
+
+BEGIN_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
+    BEGIN_REGISTER_THREAD(NEMultiEdgeSettings::AGENT_THREAD.data())
+        BEGIN_REGISTER_COMPONENT(NEMultiEdgeSettings::SERVICE_PROVIDER.data(), AgentProvider)
+            REGISTER_IMPLEMENT_SERVICE(NEMultiEdge::ServiceName, NEMultiEdge::InterfaceVersion)
+        END_REGISTER_COMPONENT(NEMultiEdgeSettings::SERVICE_PROVIDER.data())
+    END_REGISTER_THREAD(NEMultiEdgeSettings::AGENT_THREAD.data())
+END_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
 
 AIAgent::AIAgent(QWidget *parent)
     : QDialog   (parent)
@@ -40,6 +50,7 @@ AIAgent::AIAgent(QWidget *parent)
 
 AIAgent::~AIAgent()
 {
+    routerDisconnect();
     delete ui;
 }
 
@@ -185,13 +196,10 @@ bool AIAgent::routerConnect(void)
         config.setConnectionPort(mPort);
         if (Application::startMessageRouting(mAddress.toStdString().c_str(), mPort))
         {
-#if 0
-            VERIFY(ComponentLoader::addModelUnique(model));
-            ASSERT(Application::isModelLoaded(NEMultiEdgeSettings::MODEL_CONSUMER.data()) == false);
-            return Application::loadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
-#else
-            return true;
-#endif
+            if (ComponentLoader::setComponentData(NEMultiEdgeSettings::SERVICE_PROVIDER.data(), std::make_any<AIAgent *>(this)))
+            {
+                return Application::loadModel(NEMultiEdgeSettings::MODEL_PROVIDER.data());
+            }
         }
     }
     
@@ -202,7 +210,6 @@ void AIAgent::routerDisconnect(void)
 {
     Application::unloadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
     Application::stopMessageRouting();
-    ComponentLoader::removeComponentModel(NEMultiEdgeSettings::MODEL_CONSUMER);
 }
 
 void AIAgent::onConnectClicked(bool checked)

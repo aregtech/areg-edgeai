@@ -20,7 +20,7 @@
  ************************************************************************/
 
 #include "multiedge/edgedevice/agentconsumer.hpp"
-#include "multiedge/resources/NEMultiEdgeSettings.hpp"
+#include "multiedge/resources/nemultiedgesettings.hpp"
 #include "areg/component/ComponentLoader.hpp"
 #include "areg/component/ComponentThread.hpp"
 #include "areg/base/SharedBuffer.hpp"
@@ -73,7 +73,7 @@ bool AgentConsumer::processVideo(uint32_t id, const QString& cmdText, const Shar
     return false;
 }
 
-NERegistry::Model AgentConsumer::createModel(const QString& name)
+NERegistry::Model AgentConsumer::createModel(const QString& name, EdgeDevice * context)
 {
     NERegistry::Model model(NEMultiEdgeSettings::MODEL_CONSUMER);
     if (name.isEmpty() == false)
@@ -82,6 +82,7 @@ NERegistry::Model AgentConsumer::createModel(const QString& name)
         NERegistry::ComponentThreadEntry & listThreads = model.addThread(NEMultiEdgeSettings::AGENT_THREAD);
         NERegistry::ComponentEntry& component = listThreads.addComponent<AgentConsumer>(AgentConsumer::mConsumerName);
         component.addDependencyService(NEMultiEdgeSettings::SERVICE_PROVIDER);
+        component.setComponentData(std::make_any<EdgeDevice *>(context));
     }
 
     return model;
@@ -97,17 +98,16 @@ AgentConsumer::AgentConsumer(const NERegistry::ComponentEntry& entry, ComponentT
     , MultiEdgeClientBase(entry.mDependencyServices[0].mRoleName, owner)
     , QObject            ( )
     , mConsumerId        (static_cast<uint32_t>(NEService::COOKIE_UNKNOWN))
+    , mEdgeDevice        (std::any_cast<EdgeDevice *>(entry.getComponentData()))
 {
-    EdgeDevice* wnd = static_cast<EdgeDevice *>(QApplication::activeWindow());
-    ASSERT(wnd != nullptr);
-    QObject::connect(wnd, &EdgeDevice::slotServiceAvailable, this, &AgentConsumer::signalServiceConnected, Qt::ConnectionType::QueuedConnection);
+    ASSERT(mEdgeDevice != nullptr);
+    QObject::connect(this, &AgentConsumer::signalServiceConnected, mEdgeDevice, &EdgeDevice::slotServiceAvailable, Qt::ConnectionType::QueuedConnection);
 }
 
 AgentConsumer::~AgentConsumer(void)
 {
-    EdgeDevice* wnd = static_cast<EdgeDevice *>(QApplication::activeWindow());
-    ASSERT(wnd != nullptr);
-    QObject::disconnect(wnd, &EdgeDevice::slotServiceAvailable, this, &AgentConsumer::signalServiceConnected);
+    ASSERT(mEdgeDevice != nullptr);
+    QObject::disconnect(this, &AgentConsumer::signalServiceConnected, mEdgeDevice, &EdgeDevice::slotServiceAvailable);
 }
 
 bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, ProxyBase& proxy)
@@ -124,26 +124,26 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
         notifyOnQueueSizeUpdate(isConnected);
         notifyOnEdgeAgentUpdate(isConnected);
         mConsumerId = isConnected ? static_cast<uint32_t>(proxy.getProxyAddress().getCookie()) : static_cast<uint32_t>(NEService::COOKIE_UNKNOWN);
-        emit signalServiceConnected(isConnected);
         
-        EdgeDevice* wnd = static_cast<EdgeDevice *>(QApplication::activeWindow());
-        ASSERT(wnd != nullptr);
+        ASSERT(mEdgeDevice != nullptr);
         if (isConnected)
         {
-            connect(wnd, &EdgeDevice::slotAgentQueueSize       , this, &AgentConsumer::signalAgentQueueSize        , Qt::ConnectionType::QueuedConnection);
-            connect(wnd, &EdgeDevice::slotAgentType            , this, &AgentConsumer::signalAgentType             , Qt::ConnectionType::QueuedConnection);
-            connect(wnd, &EdgeDevice::slotTextProcessed        , this, &AgentConsumer::signalTextProcessed         , Qt::ConnectionType::QueuedConnection);
-            connect(wnd, &EdgeDevice::slotVideoProcessed       , this, &AgentConsumer::signalVideoProcessed        , Qt::ConnectionType::QueuedConnection);
-            connect(wnd, &EdgeDevice::slotAgentProcessingFailed, this, &AgentConsumer::signalAgentProcessingFailed , Qt::ConnectionType::QueuedConnection);
+            connect(this, &AgentConsumer::signalAgentQueueSize       , mEdgeDevice, &EdgeDevice::slotAgentQueueSize        , Qt::ConnectionType::QueuedConnection);
+            connect(this, &AgentConsumer::signalAgentType            , mEdgeDevice, &EdgeDevice::slotAgentType             , Qt::ConnectionType::QueuedConnection);
+            connect(this, &AgentConsumer::signalTextProcessed        , mEdgeDevice, &EdgeDevice::slotTextProcessed         , Qt::ConnectionType::QueuedConnection);
+            connect(this, &AgentConsumer::signalVideoProcessed       , mEdgeDevice, &EdgeDevice::slotVideoProcessed        , Qt::ConnectionType::QueuedConnection);
+            connect(this, &AgentConsumer::signalAgentProcessingFailed, mEdgeDevice, &EdgeDevice::slotAgentProcessingFailed , Qt::ConnectionType::QueuedConnection);
         }
         else
         {
-            disconnect(wnd, &EdgeDevice::slotAgentQueueSize       , this, &AgentConsumer::signalAgentQueueSize);
-            disconnect(wnd, &EdgeDevice::slotAgentType            , this, &AgentConsumer::signalAgentType);
-            disconnect(wnd, &EdgeDevice::slotTextProcessed        , this, &AgentConsumer::signalTextProcessed);
-            disconnect(wnd, &EdgeDevice::slotVideoProcessed       , this, &AgentConsumer::signalVideoProcessed);
-            disconnect(wnd, &EdgeDevice::slotAgentProcessingFailed, this, &AgentConsumer::signalAgentProcessingFailed);
+            disconnect(this, &AgentConsumer::signalAgentQueueSize       , mEdgeDevice, &EdgeDevice::slotAgentQueueSize);
+            disconnect(this, &AgentConsumer::signalAgentType            , mEdgeDevice, &EdgeDevice::slotAgentType);
+            disconnect(this, &AgentConsumer::signalTextProcessed        , mEdgeDevice, &EdgeDevice::slotTextProcessed);
+            disconnect(this, &AgentConsumer::signalVideoProcessed       , mEdgeDevice, &EdgeDevice::slotVideoProcessed);
+            disconnect(this, &AgentConsumer::signalAgentProcessingFailed, mEdgeDevice, &EdgeDevice::slotAgentProcessingFailed);
         }
+        
+        emit signalServiceConnected(isConnected);
     }
 
     return result;

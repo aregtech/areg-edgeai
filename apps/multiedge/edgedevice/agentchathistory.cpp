@@ -60,13 +60,14 @@ namespace {
 
 AgentChatHistory::AgentChatHistory(QObject *parent)
     : QAbstractTableModel   (parent)
-    , mHistory              (INIT_LENGTH)
+    , mHistory              ( )
     , mSequence             (0u)
     , mIconHuman            (":/icons/icon-human-question")
     , mIconRobot            (":/icons/icon-robot-ai")
     , mIconError            (":/icons/icon-error")
     , mIconCancel           (":/icons/icon-cancel")
 {
+    mHistory.reserve(INIT_LENGTH);
 }
 
 QVariant AgentChatHistory::headerData(int section, Qt::Orientation orientation, int role) const

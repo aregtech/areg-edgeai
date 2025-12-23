@@ -26,14 +26,22 @@
 #include "multiedge/resources/MultiEdgeStub.hpp"
 
 #include "areg/component/NERegistry.hpp"
+#include <QObject>
 
-class AgentProvider : public Component
+class AIAgent;
+
+class AgentProvider : public QObject
+                    , public Component
                     , public MultiEdgeStub
 {
+    Q_OBJECT
+
 //////////////////////////////////////////////////////////////////////////
 // Internal types, constants and static methods
 //////////////////////////////////////////////////////////////////////////
 public:
+    static AgentProvider* getService(void);
+    
 public:
     AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner);
     virtual ~AgentProvider(void) = default;
@@ -67,6 +75,9 @@ public:
 private:
 
     inline AgentProvider& self(void);
+    
+private:
+    AIAgent*    mAIAgent;
 };
 
 #endif // MULTIEDGE_AIAGENT_AGENTPROVIDER_HPP
