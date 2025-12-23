@@ -24,6 +24,7 @@
 #include "areg/ipc/ConnectionConfiguration.hpp"
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "multiedge/aiagent/agentprovider.hpp"
+#include "multiedge/aiagent/agentchathistory.hpp"
 
 #include <any>
 
@@ -40,7 +41,7 @@ AIAgent::AIAgent(QWidget *parent)
     , ui        (new Ui::AIAgent)
     , mAddress  ("127.0.0.1")
     , mPort     (8181)
-    // , mModel    (nullptr)
+    , mModel    (nullptr)
 {
     ui->setupUi(this);
     setupData();
@@ -72,23 +73,28 @@ void AIAgent::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
     ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
-void AIAgent::slotTextProcessed(uint32_t id, QString reply)
+void AIAgent::slotTextRequested(uint32_t seqId, uint32_t id, const QString& question)
 {
-#if 0
     if (mModel != nullptr)
     {
-        mModel->addResponse(reply, id);
+        mModel->addRequest(question, id, seqId);
     }
-#endif
 }
 
-void AIAgent::slotVideoProcessed(uint32_t id, SharedBuffer video)
+void AIAgent::slotTextProcessed(uint32_t seqId, uint32_t id, QString reply)
+{
+    if (mModel != nullptr)
+    {
+        mModel->addResponse(reply, id, seqId);
+    }
+}
+
+void AIAgent::slotVideoProcessed(uint32_t seqId, uint32_t id, SharedBuffer video)
 {
 }
 
 void AIAgent::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason)
 {
-#if 0
     if (mModel != nullptr)
     {
         QString text{NEMultiEdge::getString(agent)};
@@ -96,14 +102,10 @@ void AIAgent::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService
         text += NEService::getString(reason);
         mModel->addFailure(text);
     }
-#endif
 }
 
 void AIAgent::slotServiceAvailable(bool isConnected)
 {
-#if 0
-    ctrlQuestion()->setEnabled(isConnected);
-    ctrlSend()->setEnabled(isConnected);
     if (isConnected)
     {
         ui->tabWidget->setCurrentIndex(1);
@@ -114,7 +116,6 @@ void AIAgent::slotServiceAvailable(bool isConnected)
         if (oldModel != nullptr)
             delete oldModel;
     }
-#endif
 }
 
 inline QWidget* AIAgent::wndConnect(void) const
@@ -171,11 +172,12 @@ void AIAgent::setupData(void)
     ctrlPort()->setText(QString::number(mPort));
     ui->TxtQueueSize->setText("N/A");
     ui->TxtAgentType->setText("N/A");
-
 }
 
 void AIAgent::setupWidgets(void)
 {
+    QIcon icon(":/icons/icon-edge-ai");
+    setWindowIcon(icon);
 }
 
 void AIAgent::setupSignals(void)
