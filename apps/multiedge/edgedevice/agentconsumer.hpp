@@ -30,6 +30,8 @@
 #include <QString>
 #include <string_view>
 
+class EdgeDevice;
+
 class AgentConsumer : public QObject
                     , public Component
                     , public MultiEdgeClientBase
@@ -46,7 +48,7 @@ public:
 
     static bool processVideo(uint32_t id, const QString& cmdText, const SharedBuffer& video);
 
-    static NERegistry::Model createModel(const QString& name);
+    static NERegistry::Model createModel(const QString& name, EdgeDevice * context);
     
     static AgentConsumer* getService(void);
 
@@ -152,6 +154,7 @@ protected:
 private:
     static String   mConsumerName;  //!< The service name of the Agent Consumer
     uint32_t        mConsumerId;    //!< The unique ID of the consumer within the network.
+    EdgeDevice*     mEdgeDevice;    //!< The pointer to the main dialog window.
 };
 
 #endif // MULTIEDGE_EDGEDEVICE_AGENTCONSUMER_HPP

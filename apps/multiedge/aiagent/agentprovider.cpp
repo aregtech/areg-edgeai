@@ -19,11 +19,21 @@
  * Includes
  ************************************************************************/
 #include "multiedge/aiagent/agentprovider.hpp"
+#include "multiedge/resources/nemultiedgesettings.hpp"
+#include "multiedge/aiagent/aiagent.hpp"
+
+AgentProvider* AgentProvider::getService(void)
+{
+    return static_cast<AgentProvider *>(Component::findComponentByName(NEMultiEdgeSettings::SERVICE_PROVIDER));
+}
 
 AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner)
-    : Component     (entry, owner)
+    : QObject       (nullptr)
+    , Component     (entry, owner)
     , MultiEdgeStub (static_cast<Component &>(self()))
+    , mAIAgent      (std::any_cast<AIAgent *>(entry.getComponentData()))
 {
+    ASSERT(mAIAgent != nullptr);
 }
 
 void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agentId, const String& textProcess)

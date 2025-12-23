@@ -98,4 +98,5 @@ private:
     QString             mName;
     AgentChatHistory*   mModel;
 };
+
 #endif // MULTIEDGE_EDGEDEVICE_EDGEDEVICE_HPP

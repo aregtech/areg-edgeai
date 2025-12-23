@@ -40,6 +40,7 @@ EdgeDevice::EdgeDevice(QWidget *parent)
 
 EdgeDevice::~EdgeDevice()
 {
+    routerDisconnect();
     delete ui;
 }
 
@@ -200,7 +201,7 @@ bool EdgeDevice::routerConnect(void)
         config.setConnectionPort(mPort);
         if (Application::startMessageRouting(mAddress.toStdString().c_str(), mPort))
         {
-            NERegistry::Model model = AgentConsumer::createModel(mName);
+            NERegistry::Model model = AgentConsumer::createModel(mName, this);
             VERIFY(ComponentLoader::addModelUnique(model));
             ASSERT(Application::isModelLoaded(NEMultiEdgeSettings::MODEL_CONSUMER.data()) == false);
             return Application::loadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
