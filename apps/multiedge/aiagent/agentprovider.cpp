@@ -32,7 +32,7 @@ AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentT
     : QObject       (nullptr)
     , Component     (entry, owner)
     , MultiEdgeStub (static_cast<Component &>(self()))
-    , IEAgetProcessorEventConsumer()
+    , IEAgentProcessorEventConsumer()
     , mAIAgent      (std::any_cast<AIAgent*>(entry.getComponentData()))
     , mAgentState   (eAgentState::StateReady)
     , mListSessions ()
@@ -51,7 +51,7 @@ void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agen
     {
         DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
         ASSERT(worker.isValid());
-        AgetProcessorEvent::sendEvent(AgetProcessorEventData(AgetProcessorEventData::eAction::ActionProcessText, unblock, textProcess), worker);
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, unblock, textProcess), worker);
     }
 }
 
@@ -65,9 +65,9 @@ IEWorkerThreadConsumer* AgentProvider::workerThreadConsumer(const String& consum
     return &mAgentProcessor;
 }
 
-void AgentProvider::processEvent(const AgetProcessorEventData& data)
+void AgentProvider::processEvent(const AgentProcessorEventData& data)
 {
-    if (data.getAction() == AgetProcessorEventData::eAction::ActionReplyText)
+    if (data.getAction() == AgentProcessorEventData::eAction::ActionReplyText)
     {
         if (!mListSessions.empty())
         {
@@ -84,7 +84,7 @@ void AgentProvider::processEvent(const AgetProcessorEventData& data)
                 const sTextPrompt& nextPrompt = mListSessions.front();
                 DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
                 ASSERT(worker.isValid());
-                AgetProcessorEvent::sendEvent(AgetProcessorEventData(AgetProcessorEventData::eAction::ActionProcessText, nextPrompt.sessionId, nextPrompt.prompt), worker);
+                AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, nextPrompt.sessionId, nextPrompt.prompt), worker);
             }
             else
             {
@@ -97,13 +97,13 @@ void AgentProvider::processEvent(const AgetProcessorEventData& data)
 void AgentProvider::startupServiceInterface(Component& holder)
 {
     MultiEdgeStub::startupServiceInterface(holder);
-    AgetProcessorEvent::addListener(static_cast<IEAgetProcessorEventConsumer&>(self()), holder.getMasterThread());
+    AgentProcessorEvent::addListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
     setEdgeAgent(NEMultiEdge::AgentLLM);
 }
 
 void AgentProvider::shutdownServiceIntrface(Component& holder)
 {
-    AgetProcessorEvent::removeListener(static_cast<IEAgetProcessorEventConsumer&>(self()), holder.getMasterThread());
+    AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
     MultiEdgeStub::shutdownServiceIntrface(holder);
 }
 

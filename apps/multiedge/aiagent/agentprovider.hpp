@@ -32,7 +32,7 @@ class AIAgent;
 class AgentProvider : public QObject
                     , public Component
                     , public MultiEdgeStub
-                    , protected IEAgetProcessorEventConsumer
+                    , protected IEAgentProcessorEventConsumer
 {
     Q_OBJECT
 
@@ -106,7 +106,7 @@ protected:
      * \brief  Override operation. Implement this function to receive events and make processing
      * \param  data    The data, which was passed as an event.
      **/
-    virtual void processEvent( const AgetProcessorEventData & data ) override;
+    virtual void processEvent( const AgentProcessorEventData & data ) override;
 
 protected:
 /************************************************************************/

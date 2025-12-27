@@ -133,7 +133,7 @@ QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
     switch (static_cast<Qt::ItemDataRole>(role))
     {
     case Qt::DisplayRole:
-        if ((col == static_cast<int>(eChatColumn::ColumnTimestamp)) && (row < static_cast<int>(mHistory.size())))
+        if ((col == static_cast<int>(eChatColumn::ColumnTimestamp)) && (row < static_cast<int>(mHistory.size() - 1)))
         {
             const sChatEntry& next = mHistory[row + 1];
             return QVariant(displayName(entry,  next.chatSource == eChatSource::SourceEdgeAi ? next.chatTime : 0u, col));

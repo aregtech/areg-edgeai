@@ -28,7 +28,7 @@
 
 class AgentProvider;
 
-class AgetProcessorEventData
+class AgentProcessorEventData
 {
 public:
     enum eAction
@@ -41,19 +41,19 @@ public:
     };
 
 public:
-    AgetProcessorEventData(void);
-    AgetProcessorEventData(AgetProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
-    AgetProcessorEventData(AgetProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video);
-    AgetProcessorEventData(const AgetProcessorEventData& data);
-    AgetProcessorEventData(AgetProcessorEventData&& data) noexcept;
-    ~AgetProcessorEventData(void) = default;
+    AgentProcessorEventData(void);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video);
+    AgentProcessorEventData(const AgentProcessorEventData& data);
+    AgentProcessorEventData(AgentProcessorEventData&& data) noexcept;
+    ~AgentProcessorEventData(void) = default;
 
 public:
-    AgetProcessorEventData& operator = (const AgetProcessorEventData& data);
+    AgentProcessorEventData& operator = (const AgentProcessorEventData& data);
 
-    AgetProcessorEventData& operator = (AgetProcessorEventData&& data) noexcept;
+    AgentProcessorEventData& operator = (AgentProcessorEventData&& data) noexcept;
 
-    inline AgetProcessorEventData::eAction getAction(void) const;
+    inline AgentProcessorEventData::eAction getAction(void) const;
 
     inline const String& getPrompt(void) const;
 
@@ -70,10 +70,10 @@ private:
     SharedBuffer    mVideo;
 };
 
-DECLARE_EVENT(AgetProcessorEventData, AgetProcessorEvent, IEAgetProcessorEventConsumer);
+DECLARE_EVENT(AgentProcessorEventData, AgentProcessorEvent, IEAgentProcessorEventConsumer);
 
 class AgentProcessor    : public IEWorkerThreadConsumer
-                        , public IEAgetProcessorEventConsumer
+                        , public IEAgentProcessorEventConsumer
 {
 public:
     AgentProcessor(void);
@@ -105,16 +105,16 @@ protected:
      * \brief  Override operation. Implement this function to receive events and make processing
      * \param  data    The data, which was passed as an event.
      **/
-    virtual void processEvent( const AgetProcessorEventData & data ) override;
+    virtual void processEvent( const AgentProcessorEventData & data ) override;
     
 private:
-    String processText(const String & promt);
+    String processText(const String & prompt);
 
     inline AgentProcessor& self();
     
 private:
     ComponentThread*        mCompThread;
-    AgetProcessorEventData  mCurEvent;
+    AgentProcessorEventData  mCurEvent;
 
 };
 
@@ -122,27 +122,27 @@ private:
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
 
-inline AgetProcessorEventData::eAction AgetProcessorEventData::getAction(void) const
+inline AgentProcessorEventData::eAction AgentProcessorEventData::getAction(void) const
 {
     return mAction;
 }
 
-inline const String& AgetProcessorEventData::getPrompt(void) const
+inline const String& AgentProcessorEventData::getPrompt(void) const
 {
     return mPrompt;
 }
 
-inline const SharedBuffer& AgetProcessorEventData::getVideo(void) const
+inline const SharedBuffer& AgentProcessorEventData::getVideo(void) const
 {
     return mVideo;
 }
 
-inline uint32_t AgetProcessorEventData::getSessionId(void) const
+inline uint32_t AgentProcessorEventData::getSessionId(void) const
 {
     return mSessionId;
 }
 
-inline void AgetProcessorEventData::reset(void)
+inline void AgentProcessorEventData::reset(void)
 {
     mAction = ActionUnknown;
     mSessionId = 0;

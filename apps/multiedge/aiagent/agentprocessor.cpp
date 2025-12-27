@@ -19,7 +19,7 @@
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "areg/component/ComponentThread.hpp"
 
-AgetProcessorEventData::AgetProcessorEventData(void)
+AgentProcessorEventData::AgentProcessorEventData(void)
     : mAction   (ActionUnknown)
     , mSessionId(0)
     , mPrompt   ( )
@@ -27,7 +27,7 @@ AgetProcessorEventData::AgetProcessorEventData(void)
 {
 }
 
-AgetProcessorEventData::AgetProcessorEventData(AgetProcessorEventData::eAction action, uint32_t sessionId, const String& prompt)
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt)
     : mAction   (action)
     , mSessionId(sessionId)
     , mPrompt   (prompt)
@@ -35,7 +35,7 @@ AgetProcessorEventData::AgetProcessorEventData(AgetProcessorEventData::eAction a
 {
 }
 
-AgetProcessorEventData::AgetProcessorEventData(AgetProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video)
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video)
     : mAction   (action)
     , mSessionId(sessionId)
     , mPrompt   (prompt)
@@ -43,7 +43,7 @@ AgetProcessorEventData::AgetProcessorEventData(AgetProcessorEventData::eAction a
 {
 }
 
-AgetProcessorEventData::AgetProcessorEventData(const AgetProcessorEventData& data)
+AgentProcessorEventData::AgentProcessorEventData(const AgentProcessorEventData& data)
     : mAction   (data.mAction)
     , mSessionId(data.mSessionId)
     , mPrompt   (data.mPrompt)
@@ -51,7 +51,7 @@ AgetProcessorEventData::AgetProcessorEventData(const AgetProcessorEventData& dat
 {
 }
 
-AgetProcessorEventData::AgetProcessorEventData(AgetProcessorEventData&& data) noexcept
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData&& data) noexcept
     : mAction   (data.mAction)
     , mSessionId(data.mSessionId)
     , mPrompt   (std::move(data.mPrompt))
@@ -59,7 +59,7 @@ AgetProcessorEventData::AgetProcessorEventData(AgetProcessorEventData&& data) no
 {
 }
 
-AgetProcessorEventData& AgetProcessorEventData::operator = (const AgetProcessorEventData& data)
+AgentProcessorEventData& AgentProcessorEventData::operator = (const AgentProcessorEventData& data)
 {
     if (this != &data)
     {
@@ -72,7 +72,7 @@ AgetProcessorEventData& AgetProcessorEventData::operator = (const AgetProcessorE
     return (*this);
 }
 
-AgetProcessorEventData& AgetProcessorEventData::operator = (AgetProcessorEventData&& data) noexcept
+AgentProcessorEventData& AgentProcessorEventData::operator = (AgentProcessorEventData&& data) noexcept
 {
     if (this != &data)
     {
@@ -87,7 +87,7 @@ AgetProcessorEventData& AgetProcessorEventData::operator = (AgetProcessorEventDa
 
 AgentProcessor::AgentProcessor(void)
     : IEWorkerThreadConsumer(NEMultiEdgeSettings::CONSUMER_NAME)
-    , IEAgetProcessorEventConsumer( )
+    , IEAgentProcessorEventConsumer( )
     , mCompThread           (nullptr)
     , mCurEvent             ( )
 {
@@ -96,29 +96,29 @@ AgentProcessor::AgentProcessor(void)
 void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentThread& masterThread)
 {
     mCompThread = &masterThread;
-    AgetProcessorEvent::addListener(static_cast<IEAgetProcessorEventConsumer&>(*this), static_cast<DispatcherThread &>(workThread));
+    AgentProcessorEvent::addListener(static_cast<IEAgentProcessorEventConsumer&>(*this), static_cast<DispatcherThread &>(workThread));
 }
 
 void AgentProcessor::unregisterEventConsumers(WorkerThread& workThread)
 {
     mCompThread = nullptr;
-    AgetProcessorEvent::removeListener(static_cast<IEAgetProcessorEventConsumer&>(*this), static_cast<DispatcherThread&>(workThread));
+    AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(*this), static_cast<DispatcherThread&>(workThread));
 }
 
-void AgentProcessor::processEvent(const AgetProcessorEventData& data)
+void AgentProcessor::processEvent(const AgentProcessorEventData& data)
 {
     if (mCompThread == nullptr)
         return;
 
-    if (data.getAction() == AgetProcessorEventData::ActionProcessText)
+    if (data.getAction() == AgentProcessorEventData::ActionProcessText)
     {
         mCurEvent = data;
         String response = processText(data.getPrompt());
-        AgetProcessorEvent::sendEvent(AgetProcessorEventData(AgetProcessorEventData::ActionReplyText, data.getSessionId(), response), static_cast<DispatcherThread &>(*mCompThread));
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionReplyText, data.getSessionId(), response), static_cast<DispatcherThread &>(*mCompThread));
     }
 }
 
-String AgentProcessor::processText(const String& promt)
+String AgentProcessor::processText(const String& prompt)
 {
     return String();
 }
