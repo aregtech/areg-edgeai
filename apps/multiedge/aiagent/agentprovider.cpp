@@ -102,10 +102,10 @@ void AgentProvider::startupServiceInterface(Component& holder)
     setEdgeAgent(NEMultiEdge::AgentLLM);
 }
 
-void AgentProvider::shutdownServiceIntrface(Component& holder)
+void AgentProvider::shutdownServiceInterface(Component& holder)
 {
     AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
-    MultiEdgeStub::shutdownServiceIntrface(holder);
+    MultiEdgeStub::shutdownServiceInterface(holder);
 }
 
 inline AgentProvider& AgentProvider::self(void)
