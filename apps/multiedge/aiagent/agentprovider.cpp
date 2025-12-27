@@ -49,6 +49,7 @@ void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agen
     setQueueSize(static_cast<uint32_t>(mListSessions.size()));
     if (mAgentState == eAgentState::StateReady)
     {
+        mAgentState = eAgentState::StateBusy;
         DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
         ASSERT(worker.isValid());
         AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, unblock, textProcess), worker);

@@ -128,7 +128,7 @@ inline QLineEdit* EdgeDevice::ctrlName(void) const
 
 inline QTableView* EdgeDevice::ctrlTable(void) const
 {
-    return ui->tableHistory;
+    return ui->TableHistory;
 }
 
 inline QPlainTextEdit* EdgeDevice::ctrlQuestion(void) const

@@ -147,7 +147,7 @@ QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
         
     case Qt::DecorationRole:
     {
-        if (col == 0)
+        if (col == static_cast<int>(eChatColumn::ColumnSource))
         {
             switch (entry.chatStatus)
             {
