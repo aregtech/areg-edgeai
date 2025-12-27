@@ -32,6 +32,7 @@ BEGIN_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
     BEGIN_REGISTER_THREAD(NEMultiEdgeSettings::AGENT_THREAD.data())
         BEGIN_REGISTER_COMPONENT(NEMultiEdgeSettings::SERVICE_PROVIDER.data(), AgentProvider)
             REGISTER_IMPLEMENT_SERVICE(NEMultiEdge::ServiceName, NEMultiEdge::InterfaceVersion)
+            REGISTER_WORKER_THREAD(NEMultiEdgeSettings::WORKER_THREAD.data(), NEMultiEdgeSettings::CONSUMER_NAME.data())
         END_REGISTER_COMPONENT(NEMultiEdgeSettings::SERVICE_PROVIDER.data())
     END_REGISTER_THREAD(NEMultiEdgeSettings::AGENT_THREAD.data())
 END_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
@@ -39,8 +40,8 @@ END_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
 AIAgent::AIAgent(QWidget *parent)
     : QDialog   (parent)
     , ui        (new Ui::AIAgent)
-    , mAddress  ("127.0.0.1")
-    , mPort     (8181)
+    , mAddress  (QString::fromStdString(NEMultiEdgeSettings::ROUTER_ADDRESS.data()))
+    , mPort     (NEMultiEdgeSettings::ROUTER_PORT)
     , mModel    (nullptr)
 {
     ui->setupUi(this);
@@ -104,20 +105,6 @@ void AIAgent::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService
     }
 }
 
-void AIAgent::slotServiceAvailable(bool isConnected)
-{
-    if (isConnected)
-    {
-        ui->tabWidget->setCurrentIndex(1);
-        AgentChatHistory* oldModel = mModel;
-        ctrlTable()->setModel(nullptr);
-        mModel = new AgentChatHistory(ctrlTable());
-        ctrlTable()->setModel(mModel);
-        if (oldModel != nullptr)
-            delete oldModel;
-    }
-}
-
 inline QWidget* AIAgent::wndConnect(void) const
 {
     return ui->WndConnect;
@@ -172,12 +159,44 @@ void AIAgent::setupData(void)
     ctrlPort()->setText(QString::number(mPort));
     ui->TxtQueueSize->setText("N/A");
     ui->TxtAgentType->setText("N/A");
+    
+    mModel = new AgentChatHistory(this);
+    ctrlTable()->setModel(mModel);
 }
 
 void AIAgent::setupWidgets(void)
 {
     QIcon icon(":/icons/icon-edge-ai");
     setWindowIcon(icon);
+    
+    // Ensure the header is explicitly shown. Designer settings / style sheets can keep it hidden,
+    // and changing resize mode on a hidden header has no visible effect.
+    if (QTableView* table = ctrlTable())
+    {
+        table->setCornerButtonEnabled(false);
+        
+        if (QHeaderView* header = table->horizontalHeader())
+        {
+            header->setVisible(true);
+            header->setHighlightSections(false);
+            header->setSectionsClickable(true);
+            header->setStretchLastSection(true);
+            header->setSectionResizeMode(QHeaderView::Interactive);
+            header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
+            header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
+            header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
+            header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
+        }
+        
+        table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+        table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        
+        // Make sure the view has some header height calculated and repaints with updated header state.
+        table->updateGeometry();
+        table->viewport()->update();
+    }
+    
+    ctrlTab()->setCurrentIndex(0);
 }
 
 void AIAgent::setupSignals(void)
@@ -198,6 +217,8 @@ bool AIAgent::routerConnect(void)
         config.setConnectionPort(mPort);
         if (Application::startMessageRouting(mAddress.toStdString().c_str(), mPort))
         {
+            mModel->resetHistory();
+            ctrlTab()->setCurrentIndex(1);
             if (ComponentLoader::setComponentData(NEMultiEdgeSettings::SERVICE_PROVIDER.data(), std::make_any<AIAgent *>(this)))
             {
                 return Application::loadModel(NEMultiEdgeSettings::MODEL_PROVIDER.data());

@@ -24,13 +24,15 @@
 
 namespace NEMultiEdgeSettings
 {
-    constexpr std::string_view AGENT_THREAD     { "EdgeAIThread" };     //!< The name of the AI agent consumer thread.
-    constexpr std::string_view MODEL_CONSUMER   { "EdgeDevice" };       //!< The name of the model.
-    constexpr std::string_view MODEL_PROVIDER   { "EdgeAIAgent" };      //!< The name of the model provider.
-    constexpr std::string_view SERVICE_PROVIDER { "EdgeAIProvider" };   //!< The edge AI service provider name.
-    constexpr std::string_view SERVICE_CONSUMER { "EdgeAIConsumer" };   //!< The edge AI service consumer name.
-    constexpr std::string_view ROUTER_ADDRESS   { "127.0.0.1" };        //!< The IP-address of the router service.
-    constexpr uint16_t         ROUTER_PORT      { 8181 };               //!< The port of the router service.
+    constexpr std::string_view AGENT_THREAD     { "EdgeAIThread" };         //!< The name of the AI agent consumer thread.
+    constexpr std::string_view MODEL_CONSUMER   { "EdgeDevice" };           //!< The name of the model.
+    constexpr std::string_view MODEL_PROVIDER   { "EdgeAIAgent" };          //!< The name of the model provider.
+    constexpr std::string_view SERVICE_PROVIDER { "EdgeAIProvider" };       //!< The edge AI service provider name.
+    constexpr std::string_view SERVICE_CONSUMER { "EdgeAIConsumer" };       //!< The edge AI service consumer name.
+    constexpr std::string_view WORKER_THREAD    { "AIEdgeWorker" };         //!< The name of the edge ai worker thread.
+    constexpr std::string_view CONSUMER_NAME    { "AIEdgeWorkerConsumer" }; //!< The name of the edge ai worker thread consumer.
+    constexpr std::string_view ROUTER_ADDRESS   { "127.0.0.1" };            //!< The IP-address of the router service.
+    constexpr uint16_t         ROUTER_PORT      { 8181 };                   //!< The port of the router service.
 }
 
 #endif // MULTIEDGE_RESOURCES_NEMULTIEDGESETTINGS_HPP

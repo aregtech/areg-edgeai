@@ -13,7 +13,7 @@
  *  \file        multiedge/aiagent/agentchathistory.hpp
  *  \ingroup     Areg Edge AI, Edge Device
  *  \author      Artak Avetyan
- *  \brief       Edge AI Agent service chat history model.
+ *  \brief       Edge AI Agent chat history model.
  *
  ************************************************************************/
 
@@ -79,7 +79,9 @@ public:
     void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId);
     
     void addFailure(const QString& text);
-
+    
+    void resetHistory(void);
+    
 //////////////////////////////////////////////////////////////////////////
 // Overrides
 //////////////////////////////////////////////////////////////////////////
@@ -90,12 +92,6 @@ public:
     // Basic functionality:
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    // Add/Remove data:
-    virtual bool insertRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
-    virtual bool insertColumns(int column, int count, const QModelIndex& parent = QModelIndex()) override;
-    virtual bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
-    virtual bool removeColumns(int column, int count, const QModelIndex& parent = QModelIndex()) override;
 
     virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     

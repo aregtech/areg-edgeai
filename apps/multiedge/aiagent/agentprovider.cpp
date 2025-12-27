@@ -21,6 +21,7 @@
 #include "multiedge/aiagent/agentprovider.hpp"
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "multiedge/aiagent/aiagent.hpp"
+#include "areg/component/ComponentThread.hpp"
 
 AgentProvider* AgentProvider::getService(void)
 {
@@ -31,17 +32,80 @@ AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentT
     : QObject       (nullptr)
     , Component     (entry, owner)
     , MultiEdgeStub (static_cast<Component &>(self()))
-    , mAIAgent      (std::any_cast<AIAgent *>(entry.getComponentData()))
+    , IEAgentProcessorEventConsumer()
+    , mAIAgent      (std::any_cast<AIAgent*>(entry.getComponentData()))
+    , mAgentState   (eAgentState::StateReady)
+    , mListSessions ()
+    , mWorkerThread ()
+    , mAgentProcessor()
 {
     ASSERT(mAIAgent != nullptr);
 }
 
 void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agentId, const String& textProcess)
 {
+    SessionID unblock = unblockCurrentRequest();
+    mListSessions.push_back({ unblock, sessionId, agentId, textProcess });
+    setQueueSize(static_cast<uint32_t>(mListSessions.size()));
+    if (mAgentState == eAgentState::StateReady)
+    {
+        mAgentState = eAgentState::StateBusy;
+        DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
+        ASSERT(worker.isValid());
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, unblock, textProcess), worker);
+    }
 }
 
 void AgentProvider::requestProcessVideo(unsigned int sessionId, bool agentId, const String& cmdText, const SharedBuffer& dataVideo)
 {
+}
+
+IEWorkerThreadConsumer* AgentProvider::workerThreadConsumer(const String& consumerName, const String& workerThreadName)
+{
+    mWorkerThread = workerThreadName;
+    return &mAgentProcessor;
+}
+
+void AgentProvider::processEvent(const AgentProcessorEventData& data)
+{
+    if (data.getAction() == AgentProcessorEventData::eAction::ActionReplyText)
+    {
+        if (!mListSessions.empty())
+        {
+            const sTextPrompt& prompt = mListSessions.front();
+            if (prepareResponse(prompt.sessionId))
+            {
+                responseProcessText(prompt.agentSession, prompt.agentId, data.getPrompt());
+            }
+
+            mListSessions.erase(mListSessions.begin());
+            setQueueSize(static_cast<uint32_t>(mListSessions.size()));
+            if (!mListSessions.empty())
+            {
+                const sTextPrompt& nextPrompt = mListSessions.front();
+                DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
+                ASSERT(worker.isValid());
+                AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, nextPrompt.sessionId, nextPrompt.prompt), worker);
+            }
+            else
+            {
+                mAgentState = eAgentState::StateReady;
+            }
+        }
+    }
+}
+
+void AgentProvider::startupServiceInterface(Component& holder)
+{
+    MultiEdgeStub::startupServiceInterface(holder);
+    AgentProcessorEvent::addListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
+    setEdgeAgent(NEMultiEdge::AgentLLM);
+}
+
+void AgentProvider::shutdownServiceIntrface(Component& holder)
+{
+    AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
+    MultiEdgeStub::shutdownServiceIntrface(holder);
 }
 
 inline AgentProvider& AgentProvider::self(void)

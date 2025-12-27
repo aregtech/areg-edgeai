@@ -20,6 +20,8 @@
 #include "areg/base/DateTime.hpp"
 #include "areg/base/NEUtilities.hpp"
 #include <functional>
+#include <QBrush>
+#include <QFont>
 
 namespace {
     const QString _columns[static_cast<int>(AgentChatHistory::ColumnCount)]
@@ -48,12 +50,12 @@ namespace {
     };
 
 
-    constexpr uint32_t _widths[static_cast<int>(AgentChatHistory::ColumnCount)]
+    constexpr int _widths[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
-          50u
-        , 250u
-        , 100u
-        , 50u
+          70
+        , 300
+        , 100
+        , 70
     };
 
 }
@@ -71,23 +73,35 @@ AgentChatHistory::AgentChatHistory(QObject *parent)
 
 QVariant AgentChatHistory::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if ((orientation == Qt::Orientation::Vertical) || (section < 0) || (section >= static_cast<int>(eChatColumn::ColumnCount)))
-        return QVariant();
-
-    switch (static_cast<Qt::ItemDataRole>(role))
+    if (orientation == Qt::Orientation::Horizontal)
     {
-    case Qt::ItemDataRole::DisplayRole:
-        return QVariant(_columns[section]);
+        switch (static_cast<Qt::ItemDataRole>(role))
+        {
+        case Qt::ItemDataRole::DisplayRole:
+            return QVariant(_columns[section]);
 
-    case Qt::ItemDataRole::UserRole:
-        return QVariant(section);
+        case Qt::ItemDataRole::TextAlignmentRole:
+            return Qt::AlignCenter;
 
-    case Qt::ItemDataRole::SizeHintRole:
-        return _widths[section];
+        case Qt::ItemDataRole::FontRole:
+        {
+            QFont font;
+            font.setBold(true);
+            return QVariant(font);
+        }
 
-    default:
-        return QVariant();
+        case Qt::ItemDataRole::UserRole:
+            return QVariant(section);
+
+        case Qt::ItemDataRole::SizeHintRole:
+            return QSize(_widths[section], 30);
+
+        default:
+            break;
+        }
     }
+
+    return QAbstractTableModel::headerData(section, orientation, role);
 }
 
 int AgentChatHistory::rowCount(const QModelIndex& parent) const
@@ -98,38 +112,6 @@ int AgentChatHistory::rowCount(const QModelIndex& parent) const
 int AgentChatHistory::columnCount(const QModelIndex& parent) const
 {
     return static_cast<int>(eChatColumn::ColumnCount);
-}
-
-bool AgentChatHistory::insertRows(int row, int count, const QModelIndex& parent)
-{
-    Q_UNUSED(row)
-    Q_UNUSED(count)
-    Q_UNUSED(parent)
-    return false;
-}
-
-bool AgentChatHistory::insertColumns(int column, int count, const QModelIndex& parent)
-{
-    Q_UNUSED(column)
-    Q_UNUSED(count)
-    Q_UNUSED(parent)
-    return false;
-}
-
-bool AgentChatHistory::removeRows(int row, int count, const QModelIndex& parent)
-{
-    Q_UNUSED(row)
-    Q_UNUSED(count)
-    Q_UNUSED(parent)
-    return false;
-}
-
-bool AgentChatHistory::removeColumns(int column, int count, const QModelIndex& parent)
-{
-    Q_UNUSED(column)
-    Q_UNUSED(count)
-    Q_UNUSED(parent)
-    return false;
 }
 
 QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
@@ -151,7 +133,7 @@ QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
     switch (static_cast<Qt::ItemDataRole>(role))
     {
     case Qt::DisplayRole:
-        if ((col == static_cast<int>(eChatColumn::ColumnTimestamp)) && (row < static_cast<int>(mHistory.size())))
+        if ((col == static_cast<int>(eChatColumn::ColumnTimestamp)) && (row < static_cast<int>(mHistory.size() - 1)))
         {
             const sChatEntry& next = mHistory[row + 1];
             return QVariant(displayName(entry,  next.chatSource == eChatSource::SourceEdgeAi ? next.chatTime : 0u, col));
@@ -163,18 +145,25 @@ QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
         
     case Qt::DecorationRole:
     {
-        switch (entry.chatStatus)
+        if (col == static_cast<int>(eChatColumn::ColumnSource))
         {
-        case eMessageStatus::StatusInvalid:
-        case eMessageStatus::StatusError:
-            return mIconError;
+            switch (entry.chatStatus)
+            {
+            case eMessageStatus::StatusInvalid:
+            case eMessageStatus::StatusError:
+                return mIconError;
 
-        case eMessageStatus::StatusCanceled:
-        case eMessageStatus::StatusIgnore:
-            return mIconCancel;
+            case eMessageStatus::StatusCanceled:
+            case eMessageStatus::StatusIgnore:
+                return mIconCancel;
 
-        default:
-            return (entry.chatSource == eChatSource::SourceEdgeAi ? mIconRobot : mIconHuman);
+            default:
+                return (entry.chatSource == eChatSource::SourceEdgeAi ? mIconRobot : mIconHuman);
+            }
+        }
+        else
+        {
+            return QVariant();
         }
     }
         
@@ -274,6 +263,14 @@ void AgentChatHistory::addFailure(const QString& text)
     sChatEntry entry{eChatSource::SourceEdgeAi, text, DateTime::getNow(), eMessageStatus::StatusError, 0xFFFFFFFF, 0xFFFFFFFF};
     mHistory.push_back(entry);
     endInsertRows();
+}
+
+void AgentChatHistory::resetHistory(void)
+{
+    beginResetModel();
+    mHistory.clear();
+    mHistory.reserve(INIT_LENGTH);
+    endResetModel();
 }
 
 int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)
