@@ -24,18 +24,34 @@
 #include "areg/base/GEGlobal.h"
 #include "areg/component/Component.hpp"
 #include "multiedge/resources/MultiEdgeStub.hpp"
-
-#include "areg/component/NERegistry.hpp"
 #include <QObject>
+#include "multiedge/aiagent/agentprocessor.hpp"
 
 class AIAgent;
 
 class AgentProvider : public QObject
                     , public Component
                     , public MultiEdgeStub
+                    , protected IEAgetProcessorEventConsumer
 {
     Q_OBJECT
 
+private:
+    struct sTextPrompt
+    {
+        SessionID   sessionId{ 0 };
+        uint32_t    agentSession{0};
+        uint32_t    agentId{0};
+        String      prompt{};
+    };
+
+    using ListSession = std::vector<sTextPrompt>;
+
+    enum eAgentState
+    {
+          StateReady
+        , StateBusy
+    };
 //////////////////////////////////////////////////////////////////////////
 // Internal types, constants and static methods
 //////////////////////////////////////////////////////////////////////////
@@ -72,12 +88,58 @@ public:
      **/
     virtual void requestProcessVideo(unsigned int sessionId, bool agentId, const String& cmdText, const SharedBuffer& dataVideo) override;
 
+protected:
+
+    /**
+     * \brief   Returns pointer to Worker Thread Consumer object identified
+     *          by consumer name and if needed, by worker thread name.
+     *          This function is triggered, when component is initialized and
+     *          worker threads should be created.
+     * \param   consumerName        The name of worker thread consumer object to identify
+     * \param   workerThreadName    The name of worker thread, which consumer should return
+     * \return  Return valid pointer if worker thread has assigned consumer.
+     **/
+    virtual IEWorkerThreadConsumer* workerThreadConsumer(const String& consumerName, const String& workerThreadName) override;
+
+
+    /**
+     * \brief  Override operation. Implement this function to receive events and make processing
+     * \param  data    The data, which was passed as an event.
+     **/
+    virtual void processEvent( const AgetProcessorEventData & data ) override;
+
+protected:
+/************************************************************************/
+// StubBase overrides. Triggered by Component on startup.
+/************************************************************************/
+
+    /**
+     * \brief   This function is triggered by Component when starts up.
+     *          Overwrite this method and set appropriate request and
+     *          attribute update notification event listeners here
+     * \param   holder  The holder component of service interface of Stub,
+     *                  which started up.
+     **/
+    virtual void startupServiceInterface( Component & holder ) override;
+
+    /**
+     * \brief   This function is triggered by Component when shuts down.
+     *          Overwrite this method to remove listeners and stub cleanup
+     * \param   holder  The holder component of service interface of Stub,
+     *                  which shuts down.
+     **/
+    virtual void shutdownServiceIntrface ( Component & holder ) override;
+
 private:
 
     inline AgentProvider& self(void);
     
 private:
-    AIAgent*    mAIAgent;
+    AIAgent*        mAIAgent;
+    eAgentState     mAgentState;
+    ListSession     mListSessions;
+    String          mWorkerThread;
+    AgentProcessor  mAgentProcessor;
 };
 
 #endif // MULTIEDGE_AIAGENT_AGENTPROVIDER_HPP

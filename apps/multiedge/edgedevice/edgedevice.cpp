@@ -25,12 +25,12 @@
 #include "multiedge/edgedevice/agentconsumer.hpp"
 #include "multiedge/edgedevice/agentchathistory.hpp"
 
-EdgeDevice::EdgeDevice(QWidget *parent)
-    : QDialog   (parent)
-    , ui        (new Ui::EdgeDevice)
-    , mAddress  ("127.0.0.1")
-    , mPort     (8181)
-    , mModel    (nullptr)
+EdgeDevice::EdgeDevice(QWidget* parent)
+    : QDialog(parent)
+    , ui(new Ui::EdgeDevice)
+    , mAddress("127.0.0.1")
+    , mPort(8181)
+    , mModel(nullptr)
 {
     ui->setupUi(this);
     setupData();
@@ -53,12 +53,12 @@ void EdgeDevice::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
 {
     const QString _agents[]
     {
-        "Unknown"
+          "Unknown"
         , "LLM"
         , "VLM"
         , "Hybrid"
     };
-    
+
     ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
@@ -78,7 +78,7 @@ void EdgeDevice::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEServ
 {
     if (mModel != nullptr)
     {
-        QString text{NEMultiEdge::getString(agent)};
+        QString text{ NEMultiEdge::getString(agent) };
         text += ": Failed to process a request, reason = ";
         text += NEService::getString(reason);
         mModel->addFailure(text);
@@ -91,13 +91,8 @@ void EdgeDevice::slotServiceAvailable(bool isConnected)
     ctrlSend()->setEnabled(isConnected);
     if (isConnected)
     {
-        ui->tabWidget->setCurrentIndex(1);
-        AgentChatHistory* oldModel = mModel;
-        ctrlTable()->setModel(nullptr);
-        mModel = new AgentChatHistory(ctrlTable());
-        ctrlTable()->setModel(mModel);
-        if (oldModel != nullptr)
-            delete oldModel;
+        ctrlTab()->setCurrentIndex(1);
+        mModel->resetHistory();
     }
 }
 
@@ -133,7 +128,7 @@ inline QLineEdit* EdgeDevice::ctrlName(void) const
 
 inline QTableView* EdgeDevice::ctrlTable(void) const
 {
-    return ui->TableHistory;
+    return ui->tableHistory;
 }
 
 inline QPlainTextEdit* EdgeDevice::ctrlQuestion(void) const
@@ -161,10 +156,10 @@ void EdgeDevice::setupData(void)
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
     if (config.isConfigured())
     {
-        mPort   = static_cast<uint16_t>(config.getConnectionPort());
-        mAddress= config.getConnectionAddress();
+        mPort = static_cast<uint16_t>(config.getConnectionPort());
+        mAddress = config.getConnectionAddress();
     }
-    
+
     String name = NEUtilities::generateName(NEMultiEdgeSettings::SERVICE_CONSUMER.data());
     mName = QString::fromStdString(name.getData());
     ctrlAddress()->setText(mAddress);
@@ -172,7 +167,8 @@ void EdgeDevice::setupData(void)
     ctrlName()->setText(mName);
     ui->TxtQueueSize->setText("N/A");
     ui->TxtAgentType->setText("N/A");
-
+    mModel = new AgentChatHistory(this);
+    ctrlTable()->setModel(mModel);
 }
 
 void EdgeDevice::setupWidgets(void)
@@ -180,23 +176,51 @@ void EdgeDevice::setupWidgets(void)
     QIcon icon(":/icons/icon-edge-device");
     setWindowIcon(icon);
 
+    // Ensure the header is explicitly shown. Designer settings / style sheets can keep it hidden,
+    // and changing resize mode on a hidden header has no visible effect.
+    if (QTableView* table = ctrlTable())
+    {
+        table->setCornerButtonEnabled(false);
+
+        if (QHeaderView* header = table->horizontalHeader())
+        {
+            header->setVisible(true);
+            header->setHighlightSections(false);
+            header->setSectionsClickable(true);
+            header->setStretchLastSection(true);
+            header->setSectionResizeMode(QHeaderView::Interactive);
+            header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
+            header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
+            header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
+            header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
+        }
+
+        table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+        table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+        // Make sure the view has some header height calculated and repaints with updated header state.
+        table->updateGeometry();
+        table->viewport()->update();
+    }
+
     ctrlQuestion()->setEnabled(false);
     ctrlSend()->setEnabled(false);
+    ctrlTab()->setCurrentIndex(0);
 }
 
 void EdgeDevice::setupSignals(void)
 {
-    connect(ctrlClose()     , &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close();});
-    connect(ctrlConnect()   , &QPushButton::clicked, this, &EdgeDevice::onConnectClicked);
-    connect(ctrlSend()      , &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
+    connect(ctrlClose(), &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close(); });
+    connect(ctrlConnect(), &QPushButton::clicked, this, &EdgeDevice::onConnectClicked);
+    connect(ctrlSend(), &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
 }
 
 bool EdgeDevice::routerConnect(void)
 {
-    mAddress= ctrlAddress()->text();
-    mPort   = static_cast<uint16_t>(ctrlPort()->text().toUInt());
-    mName   = ctrlName()->text();
-    
+    mAddress = ctrlAddress()->text();
+    mPort = static_cast<uint16_t>(ctrlPort()->text().toUInt());
+    mName = ctrlName()->text();
+
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
     if (config.isConfigured())
     {
@@ -210,7 +234,7 @@ bool EdgeDevice::routerConnect(void)
             return Application::loadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
         }
     }
-    
+
     return false;
 }
 
@@ -263,6 +287,6 @@ void EdgeDevice::onSendQuestion(bool checked)
             mModel->addFailure("Failed to send response to process question");
         }
     }
-    
+
     ctrlQuestion()->setPlainText(QString());
 }

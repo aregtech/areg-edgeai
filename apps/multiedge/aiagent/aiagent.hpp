@@ -46,8 +46,6 @@ public:
     
 public slots:
     
-    void slotServiceAvailable(bool isConnected);
-    
     void slotAgentQueueSize(uint32_t queueSize);
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);

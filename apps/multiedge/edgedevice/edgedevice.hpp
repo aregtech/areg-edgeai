@@ -30,6 +30,7 @@ class EdgeDevice;
 QT_END_NAMESPACE
 
 class AgentChatHistory;
+class ChatTableHeader;
 class QPushButton;
 class QPlainTextEdit;
 class QLineEdit;
@@ -97,6 +98,7 @@ private:
     uint16_t            mPort;
     QString             mName;
     AgentChatHistory*   mModel;
+    ChatTableHeader*    mHeader;
 };
 
 #endif // MULTIEDGE_EDGEDEVICE_EDGEDEVICE_HPP
