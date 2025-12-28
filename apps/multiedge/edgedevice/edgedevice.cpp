@@ -92,6 +92,7 @@ void EdgeDevice::slotServiceAvailable(bool isConnected)
     if (isConnected)
     {
         ctrlTab()->setCurrentIndex(1);
+        ctrlQuestion()->setFocus();
         mModel->resetHistory();
     }
 }

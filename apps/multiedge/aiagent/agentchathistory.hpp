@@ -97,7 +97,7 @@ public:
     
 private:
     
-    const QString & displayName(const sChatEntry & entry, uint64_t next, int column) const;
+    QString displayName(const sChatEntry & entry, uint64_t next, int column) const;
     
     int findEntry(uint32_t seqId, int32_t startAt);
 

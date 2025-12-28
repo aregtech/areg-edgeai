@@ -97,7 +97,7 @@ AgentConsumer::AgentConsumer(const NERegistry::ComponentEntry& entry, ComponentT
     : Component          (entry, owner)
     , MultiEdgeClientBase(entry.mDependencyServices[0].mRoleName, owner)
     , QObject            ( )
-    , mConsumerId        (static_cast<uint32_t>(NEService::COOKIE_UNKNOWN))
+    , mConsumerId        (static_cast<uint32_t>(NEMath::CHECKSUM_IGNORE))
     , mEdgeDevice        (std::any_cast<EdgeDevice *>(entry.getComponentData()))
 {
     ASSERT(mEdgeDevice != nullptr);
@@ -123,7 +123,7 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
 
         notifyOnQueueSizeUpdate(isConnected);
         notifyOnEdgeAgentUpdate(isConnected);
-        mConsumerId = isConnected ? static_cast<uint32_t>(proxy.getProxyAddress().getCookie()) : static_cast<uint32_t>(NEService::COOKIE_UNKNOWN);
+        mConsumerId = isConnected ? NEMath::crc32Calculate(getRoleName().getString()) : static_cast<uint32_t>(NEMath::CHECKSUM_IGNORE);
         
         ASSERT(mEdgeDevice != nullptr);
         if (isConnected)
