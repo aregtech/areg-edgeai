@@ -76,7 +76,11 @@ public:
 public:
     void addRequest(const QString& question, uint32_t chatId, uint32_t seqId);
     
+    void addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint64_t when);
+    
     void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId);
+    
+    void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint64_t when);
     
     void addFailure(const QString& text);
     

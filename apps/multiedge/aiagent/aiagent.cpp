@@ -74,19 +74,19 @@ void AIAgent::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
     ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
-void AIAgent::slotTextRequested(uint32_t seqId, uint32_t id, QString question)
+void AIAgent::slotTextRequested(uint32_t seqId, uint32_t id, QString question, uint64_t stamp)
 {
     if (mModel != nullptr)
     {
-        mModel->addRequest(question, id, seqId);
+        mModel->addRequest(question, id, seqId, stamp);
     }
 }
 
-void AIAgent::slotTextProcessed(uint32_t seqId, uint32_t id, QString reply)
+void AIAgent::slotTextProcessed(uint32_t seqId, uint32_t id, QString reply, uint64_t stamp)
 {
     if (mModel != nullptr)
     {
-        mModel->addResponse(reply, id, seqId);
+        mModel->addResponse(reply, id, seqId, stamp);
     }
 }
 

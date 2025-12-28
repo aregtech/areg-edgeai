@@ -21,6 +21,7 @@
 #include "multiedge/aiagent/agentprovider.hpp"
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "multiedge/aiagent/aiagent.hpp"
+#include "areg/base/DateTime.hpp"
 #include "areg/component/ComponentThread.hpp"
 #include "areg/logging/GELog.h"
 
@@ -91,7 +92,7 @@ void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agen
     LOG_DBG("Requested to process text. Agent ID [ %u ], session ID [ %u ], agent state [ %s ]", agentId, sessionId, mAgentState == eAgentState::StateReady ? "Ready" : "Busy");
 
     emit signalQueueSize(static_cast<uint32_t>(mListSessions.size()));
-    emit signalTextRequested(sessionId, agentId, QString::fromStdString(textProcess.getString()));
+    emit signalTextRequested(sessionId, agentId, QString::fromStdString(textProcess.getString()), DateTime::getNow());
     if (mAgentState == eAgentState::StateReady)
     {
         mAgentState = eAgentState::StateBusy;
@@ -121,7 +122,7 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
         if (!mListSessions.empty())
         {
             const sTextPrompt& prompt = mListSessions.front();
-            emit signalTextProcessed(prompt.agentSession, prompt.agentId, QString::fromStdString(data.getPrompt().getData()));
+            emit signalTextProcessed(prompt.agentSession, prompt.agentId, QString::fromStdString(data.getPrompt().getData()), DateTime::getNow());
             if (prepareResponse(prompt.sessionId))
             {
                 LOG_DBG("Prepared response, sending response to the Agent [ %u ], session [ %u ], response text length [ %u ]"

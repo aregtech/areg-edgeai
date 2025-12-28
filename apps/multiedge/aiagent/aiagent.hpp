@@ -50,9 +50,9 @@ public slots:
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
 
-    void slotTextRequested(uint32_t seqId, uint32_t id, QString question);
+    void slotTextRequested(uint32_t seqId, uint32_t id, QString question, uint64_t stamp);
     
-    void slotTextProcessed(uint32_t seqId, uint32_t id, QString reply);
+    void slotTextProcessed(uint32_t seqId, uint32_t id, QString reply, uint64_t stamp);
     
     void slotVideoProcessed(uint32_t seqId, uint32_t id, SharedBuffer video);
     

@@ -210,8 +210,13 @@ QString AgentChatHistory::displayName(const sChatEntry & entry, uint64_t next, i
 
 uint32_t AgentChatHistory::addRequest(const QString& question)
 {
+    return addRequest(question, DateTime::getNow());
+}
+
+uint32_t AgentChatHistory::addRequest(const QString& question, uint64_t when)
+{
     beginInsertRows(QModelIndex(), mSequence, mSequence);
-    sChatEntry entry{eChatSource::SourceHuman, question, DateTime::getNow(), eMessageStatus::StatusPending, mSequence};
+    sChatEntry entry{eChatSource::SourceHuman, question, when, eMessageStatus::StatusPending, mSequence};
     mHistory.push_back(entry);
     endInsertRows();
     return mSequence ++;
