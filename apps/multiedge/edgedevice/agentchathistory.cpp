@@ -53,10 +53,10 @@ namespace {
 
     constexpr int _widths[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
-          70
-        , 300
+          50
+        , 250
         , 100
-        , 70
+        , 50
     };
 
 }
@@ -177,23 +177,22 @@ QVariant AgentChatHistory::data(const QModelIndex& index, int role) const
     }
 }
 
-const QString & AgentChatHistory::displayName(const sChatEntry & entry, uint64_t next, int column) const
+QString AgentChatHistory::displayName(const sChatEntry & entry, uint64_t next, int column) const
 {
-    static QString _time;
     std::function fn {[this](uint64_t val, uint64_t next) -> QString{
-        QString result;
         DateTime tm(val);
         String res = tm.formatTime();
-        result.fromStdString(res.getData());
+        QString result(QString::fromStdString(res.getData()));
         result += " | ";
-        if (next < val) {
-            result += QString::number(next - val);
+        if (next > val)
+        {
+            result += QString::number(static_cast<float>(next - val) / 1000.0);
+            result += "ms";
         }
         
         return result;
     }};
     
-    _time.clear();    
     switch (static_cast<eChatColumn>(column))
     {
     case eChatColumn::ColumnSource:
@@ -201,12 +200,11 @@ const QString & AgentChatHistory::displayName(const sChatEntry & entry, uint64_t
     case eChatColumn::ColumnMessage:
         return entry.chatMessage;
     case eChatColumn::ColumnTimestamp:
-        _time = fn(entry.chatTime, next);
-        return _time;
+        return fn(entry.chatTime, next);
     case eChatColumn::ColumnStatus:
         return _status[static_cast<int>(entry.chatStatus)];
     default:
-        return _time;
+        return QString();
     }
 }
 
@@ -281,7 +279,7 @@ void AgentChatHistory::resetHistory(void)
 int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)
 {
     startAt = startAt >= static_cast<int32_t>(mHistory.size()) ? static_cast<int32_t>(mHistory.size()) - 1 : startAt;
-    for (int32_t i = startAt; i > 0; -- i)
+    for (int32_t i = startAt; i >= 0; -- i)
     {
         if (mHistory[i].chatId == seqId)
             return i;

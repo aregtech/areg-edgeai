@@ -130,6 +130,16 @@ protected:
      **/
     virtual void shutdownServiceInterface ( Component & holder ) override;
 
+signals:
+
+    void signalEdgeAgent(NEMultiEdge::eEdgeAgent newValue);
+
+    void signalQueueSize(uint32_t queueSize);
+
+    void signalTextRequested(uint32_t seqId, uint32_t id, const QString& question);
+
+    void signalTextProcessed(uint32_t seqId, uint32_t id, QString reply);
+
 private:
 
     inline AgentProvider& self(void);

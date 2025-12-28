@@ -22,6 +22,13 @@
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "multiedge/aiagent/aiagent.hpp"
 #include "areg/component/ComponentThread.hpp"
+#include "areg/logging/GELog.h"
+
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_startupServiceInterface);
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_requestProcessText);
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_requestProcessVideo);
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_processEvent);
 
 AgentProvider* AgentProvider::getService(void)
 {
@@ -42,11 +49,34 @@ AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentT
     ASSERT(mAIAgent != nullptr);
 }
 
+void AgentProvider::startupServiceInterface(Component& holder)
+{
+    LOG_SCOPE(multiedge_aiagent_AgentProvider_startupServiceInterface);
+    LOG_DBG("Starting Edge AI agent service, adding AgentProcessorEvent event listener");
+    MultiEdgeStub::startupServiceInterface(holder);
+    AgentProcessorEvent::addListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
+    setEdgeAgent(NEMultiEdge::AgentLLM);
+    setQueueSize(0);
+
+    emit signalEdgeAgent(NEMultiEdge::AgentLLM);
+    emit signalQueueSize(0);
+}
+
+void AgentProvider::shutdownServiceInterface(Component& holder)
+{
+    LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
+    AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
+    MultiEdgeStub::shutdownServiceInterface(holder);
+}
+
 void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agentId, const String& textProcess)
 {
+    LOG_SCOPE(multiedge_aiagent_AgentProvider_requestProcessText);
     SessionID unblock = unblockCurrentRequest();
     mListSessions.push_back({ unblock, sessionId, agentId, textProcess });
     setQueueSize(static_cast<uint32_t>(mListSessions.size()));
+    emit signalQueueSize(static_cast<uint32_t>(mListSessions.size()));
+    emit signalTextRequested(sessionId, agentId, QString::fromStdString(textProcess.getString()));
     if (mAgentState == eAgentState::StateReady)
     {
         mAgentState = eAgentState::StateBusy;
@@ -58,6 +88,7 @@ void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agen
 
 void AgentProvider::requestProcessVideo(unsigned int sessionId, bool agentId, const String& cmdText, const SharedBuffer& dataVideo)
 {
+    LOG_SCOPE(multiedge_aiagent_AgentProvider_requestProcessVideo);
 }
 
 IEWorkerThreadConsumer* AgentProvider::workerThreadConsumer(const String& consumerName, const String& workerThreadName)
@@ -68,6 +99,7 @@ IEWorkerThreadConsumer* AgentProvider::workerThreadConsumer(const String& consum
 
 void AgentProvider::processEvent(const AgentProcessorEventData& data)
 {
+    LOG_SCOPE(multiedge_aiagent_AgentProvider_processEvent);
     if (data.getAction() == AgentProcessorEventData::eAction::ActionReplyText)
     {
         if (!mListSessions.empty())
@@ -80,6 +112,7 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
 
             mListSessions.erase(mListSessions.begin());
             setQueueSize(static_cast<uint32_t>(mListSessions.size()));
+            emit signalQueueSize(static_cast<uint32_t>(mListSessions.size()));
             if (!mListSessions.empty())
             {
                 const sTextPrompt& nextPrompt = mListSessions.front();
@@ -93,19 +126,6 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
             }
         }
     }
-}
-
-void AgentProvider::startupServiceInterface(Component& holder)
-{
-    MultiEdgeStub::startupServiceInterface(holder);
-    AgentProcessorEvent::addListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
-    setEdgeAgent(NEMultiEdge::AgentLLM);
-}
-
-void AgentProvider::shutdownServiceInterface(Component& holder)
-{
-    AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
-    MultiEdgeStub::shutdownServiceInterface(holder);
 }
 
 inline AgentProvider& AgentProvider::self(void)

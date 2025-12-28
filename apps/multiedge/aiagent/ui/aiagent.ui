@@ -136,6 +136,9 @@
             <property name="checkable">
              <bool>true</bool>
             </property>
+            <property name="default">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item row="3" column="1">
@@ -377,8 +380,10 @@
   <tabstop>RouterAddress</tabstop>
   <tabstop>RouterPort</tabstop>
   <tabstop>BtnConnect</tabstop>
-  <tabstop>TableHistory</tabstop>
   <tabstop>BtnClose</tabstop>
+  <tabstop>TableHistory</tabstop>
+  <tabstop>TxtAgentType</tabstop>
+  <tabstop>TxtQueueSize</tabstop>
  </tabstops>
  <resources/>
  <connections/>
