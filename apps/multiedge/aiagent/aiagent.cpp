@@ -74,7 +74,7 @@ void AIAgent::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
     ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
-void AIAgent::slotTextRequested(uint32_t seqId, uint32_t id, const QString& question)
+void AIAgent::slotTextRequested(uint32_t seqId, uint32_t id, QString question)
 {
     if (mModel != nullptr)
     {

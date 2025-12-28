@@ -77,6 +77,8 @@ public:
     
     bool addResponse(const QString& reply, uint32_t seqId);
     
+    bool addResponse(const QString& reply, uint32_t seqId, uint64_t when);
+        
     void addFailure(const QString& text);
 
     void resetHistory(void);

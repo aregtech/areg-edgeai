@@ -54,7 +54,7 @@ public slots:
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
     
-    void slotTextProcessed(uint32_t id, QString reply);
+    void slotTextProcessed(uint32_t id, QString reply, uint64_t stamp);
     
     void slotVideoProcessed(uint32_t id, SharedBuffer video);
     

@@ -67,7 +67,7 @@ signals:
 
     void signalAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
 
-    void signalTextProcessed(uint32_t id, QString reply);
+    void signalTextProcessed(uint32_t id, QString reply, uint64_t stamp);
 
     void signalVideoProcessed(uint32_t id, SharedBuffer video);
 

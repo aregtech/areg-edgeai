@@ -50,7 +50,7 @@ public slots:
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
 
-    void slotTextRequested(uint32_t seqId, uint32_t id, const QString& question);
+    void slotTextRequested(uint32_t seqId, uint32_t id, QString question);
     
     void slotTextProcessed(uint32_t seqId, uint32_t id, QString reply);
     
