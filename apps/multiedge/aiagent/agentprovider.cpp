@@ -73,10 +73,10 @@ void AgentProvider::shutdownServiceInterface(Component& holder)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
     
-    disconnect(this, &AgentProvider::signalQueueSize    , mAIAgent, &AIAgent::slotAgentQueueSize );
-    disconnect(this, &AgentProvider::signalEdgeAgent    , mAIAgent, &AIAgent::slotAgentType      );
-    disconnect(this, &AgentProvider::signalTextRequested, mAIAgent, &AIAgent::slotTextRequested  );
-    disconnect(this, &AgentProvider::signalTextProcessed, mAIAgent, &AIAgent::slotTextProcessed  );
+    disconnect(this, &AgentProvider::signalQueueSize    , mAIAgent, &AIAgent::slotAgentQueueSize);
+    disconnect(this, &AgentProvider::signalEdgeAgent    , mAIAgent, &AIAgent::slotAgentType     );
+    disconnect(this, &AgentProvider::signalTextRequested, mAIAgent, &AIAgent::slotTextRequested );
+    disconnect(this, &AgentProvider::signalTextProcessed, mAIAgent, &AIAgent::slotTextProcessed );
 
     AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
     MultiEdgeStub::shutdownServiceInterface(holder);
