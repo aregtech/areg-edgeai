@@ -75,8 +75,12 @@ public:
 public:
     uint32_t addRequest(const QString& question);
     
+    uint32_t addRequest(const QString& question, uint64_t when);
+    
     bool addResponse(const QString& reply, uint32_t seqId);
     
+    bool addResponse(const QString& reply, uint32_t seqId, uint64_t when);
+        
     void addFailure(const QString& text);
 
     void resetHistory(void);

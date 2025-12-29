@@ -21,6 +21,7 @@
 
 #include "multiedge/edgedevice/agentconsumer.hpp"
 #include "multiedge/resources/nemultiedgesettings.hpp"
+#include "areg/base/DateTime.hpp"
 #include "areg/component/ComponentLoader.hpp"
 #include "areg/component/ComponentThread.hpp"
 #include "areg/base/SharedBuffer.hpp"
@@ -173,7 +174,7 @@ void AgentConsumer::responseProcessText(unsigned int sessionId, unsigned int age
     if (agentId == mConsumerId)
     {
         LOG_DBG("Received text reply, sessionId: %u, agentId: %u", sessionId, agentId);
-        emit signalTextProcessed(sessionId, QString::fromStdString(textReplied.getData()) );
+        emit signalTextProcessed(sessionId, QString::fromStdString(textReplied.getData()), DateTime::getNow() );
     }
     else
     {

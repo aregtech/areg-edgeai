@@ -208,15 +208,25 @@ QString AgentChatHistory::displayName(const sChatEntry & entry, uint64_t next, i
 
 void AgentChatHistory::addRequest(const QString& question, uint32_t chatId, uint32_t seqId)
 {
+    addRequest(question, chatId, seqId, DateTime::getNow());    
+}
+
+void AgentChatHistory::addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint64_t when)
+{
     beginInsertRows(QModelIndex(), mHistory.size(), mHistory.size());
-    sChatEntry entry{eChatSource::SourceHuman, question, DateTime::getNow(), eMessageStatus::StatusPending, chatId, seqId};
+    sChatEntry entry{eChatSource::SourceHuman, question, when, eMessageStatus::StatusPending, chatId, seqId};
     mHistory.push_back(entry);
     endInsertRows();
 }
 
 void AgentChatHistory::addResponse(const QString& reply, uint32_t chatId, uint32_t seqId)
 {
-    sChatEntry entry{eChatSource::SourceEdgeAi, reply, DateTime::getNow(), eMessageStatus::StatusReplied, chatId, seqId};
+    addResponse(reply, chatId, seqId, DateTime::getNow());
+}
+
+void AgentChatHistory::addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint64_t when)
+{
+    sChatEntry entry{eChatSource::SourceEdgeAi, reply, when, eMessageStatus::StatusReplied, chatId, seqId};
     int32_t idx  = static_cast<int32_t>(seqId * 2);
     int32_t size = static_cast<int32_t>(mHistory.size());
     if (idx >= size)

@@ -136,9 +136,9 @@ signals:
 
     void signalQueueSize(uint32_t queueSize);
 
-    void signalTextRequested(uint32_t seqId, uint32_t id, const QString& question);
+    void signalTextRequested(uint32_t seqId, uint32_t id, QString question, uint64_t stamp);
 
-    void signalTextProcessed(uint32_t seqId, uint32_t id, QString reply);
+    void signalTextProcessed(uint32_t seqId, uint32_t id, QString reply, uint64_t stamp);
 
 private:
 

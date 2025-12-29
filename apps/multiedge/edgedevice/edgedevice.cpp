@@ -62,11 +62,11 @@ void EdgeDevice::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
     ui->TxtAgentType->setText(_agents[static_cast<int>(EdgeAgent)]);
 }
 
-void EdgeDevice::slotTextProcessed(uint32_t id, QString reply)
+void EdgeDevice::slotTextProcessed(uint32_t id, QString reply, uint64_t stamp)
 {
     if (mModel != nullptr)
     {
-        mModel->addResponse(reply, id);
+        mModel->addResponse(reply, id, stamp);
     }
 }
 
@@ -211,9 +211,9 @@ void EdgeDevice::setupWidgets(void)
 
 void EdgeDevice::setupSignals(void)
 {
-    connect(ctrlClose(), &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close(); });
+    connect(ctrlClose()  , &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close(); });
     connect(ctrlConnect(), &QPushButton::clicked, this, &EdgeDevice::onConnectClicked);
-    connect(ctrlSend(), &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
+    connect(ctrlSend()   , &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
 }
 
 bool EdgeDevice::routerConnect(void)
