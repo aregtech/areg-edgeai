@@ -52,7 +52,7 @@ include("${EDGEAI_BASE}/CMakeLists.txt")
 # ---------------------------------------------------------
 add_custom_target(copy-areg-config ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${AREG_RESUORCES}/areg.init"
+            "${AREG_RESOURCES}/areg.init"
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config/areg.init"
     COMMENT "Copying Areg configuration file into the build directory"
 )
