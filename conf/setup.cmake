@@ -43,7 +43,7 @@ if (NOT areg_FOUND)
 endif()
 
 include(${AREG_SDK_ROOT}/areg.cmake)
-set(AREG_RESUORCES "${AREG_FRAMEWORK}/areg/resources")
+set(AREG_RESOURCES "${AREG_FRAMEWORK}/areg/resources")
 
 # ---------------------------------------------------------
 # llama.cpp build options
@@ -97,7 +97,7 @@ function(areg_edgeai_finalize_apps TARGET_APP_NAME)
     if (WIN32)
         get_target_property(_qt_bin_dir Qt6::qmake IMPORTED_LOCATION)
         get_filename_component(_qt_bin_dir "${_qt_bin_dir}" DIRECTORY)
-        add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        add_custom_command(TARGET ${TARGET_APP_NAME} POST_BUILD
             COMMAND "${_qt_bin_dir}/windeployqt.exe"
                     --no-opengl-sw
                     --no-compiler-runtime
@@ -111,8 +111,8 @@ function(areg_edgeai_finalize_apps TARGET_APP_NAME)
     elseif (APPLE)
         get_target_property(_qt_bin_dir Qt6::qmake IMPORTED_LOCATION)
         get_filename_component(_qt_bin_dir "${_qt_bin_dir}" DIRECTORY)
-        add_custom_command(TARGET lusan POST_BUILD
-            COMMAND "${_qt_bin_dir}/macdeployqt .exe"
+        add_custom_command(TARGET ${TARGET_APP_NAME} POST_BUILD
+            COMMAND "${_qt_bin_dir}/macdeployqt"
                     --no-opengl-sw
                     --no-compiler-runtime
                     --no-translations

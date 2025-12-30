@@ -119,7 +119,7 @@ private:
     llama_context_params    mLLMParams;
     uint32_t                mTextLimit;
     uint32_t                mTokenLimit; 
-    void*                   mLLMHandle;
+    llama_context*          mLLMHandle;
 };
 
 //////////////////////////////////////////////////////////////////////////
