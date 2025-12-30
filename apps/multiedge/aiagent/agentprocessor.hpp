@@ -25,6 +25,7 @@
 #include "areg/component/IEWorkerThreadConsumer.hpp"
 #include "areg/component/TEEvent.hpp"
 #include "areg/base/SharedBuffer.hpp"
+#include "llama.h"
 
 class AgentProvider;
 
@@ -114,8 +115,11 @@ private:
     
 private:
     ComponentThread*        mCompThread;
-    AgentProcessorEventData  mCurEvent;
-
+    AgentProcessorEventData mCurEvent;
+    llama_context_params    mLLMParams;
+    uint32_t                mTextLimit;
+    uint32_t                mTokenLimit; 
+    llama_context*          mLLMHandle;
 };
 
 //////////////////////////////////////////////////////////////////////////

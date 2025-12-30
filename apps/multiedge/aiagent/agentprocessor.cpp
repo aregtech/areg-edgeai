@@ -90,6 +90,10 @@ AgentProcessor::AgentProcessor(void)
     , IEAgentProcessorEventConsumer( )
     , mCompThread           (nullptr)
     , mCurEvent             ( )
+    , mLLMParams            (llama_context_default_params())
+    , mTextLimit            (512)
+    , mTokenLimit           (2048)
+    , mLLMHandle            (nullptr)
 {
 }
 
