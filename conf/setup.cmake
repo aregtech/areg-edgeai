@@ -33,7 +33,7 @@ if (NOT areg_FOUND)
         GIT_REPOSITORY https://github.com/aregtech/areg-sdk.git
         GIT_TAG "master"
     )
-    message(STATUS "AREG-EDGEAI: >>> AREG SDK sources are fetched, setting up areg-sdk ...")
+    message(STATUS "AREG-EDGEAI: >>> AREG SDK sources are fetched, setting up areg ...")
     FetchContent_MakeAvailable(areg)
 
     # Set the root directory of the fetched AREG SDK
