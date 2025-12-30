@@ -54,6 +54,9 @@ Additional AI engines or agent types may be introduced in the future.
 
 ### Requirements
 
+> [!IMPORTANT]
+> **You should have installed [git-lfs](https://git-lfs.com/) in your system to clone this repository!**
+
 - **C++17 compatible compiler**  
   GCC, Clang, MSVC, or MinGW
 - **CMake 3.20 or newer**
@@ -61,14 +64,20 @@ Additional AI engines or agent types may be introduced in the future.
   Required for code generation tools
 - **Qt 5.12 or newer**  
   Required for UI based projects
+- **Git with git-lfs support**  
+  Required to clone AI model files
+- **Supported Edge AI engine**  
+  Currently, only `llama.cpp` is supported.
+
+> [!NOTE]
+> More models can be downloaded manually and tested from the [https://huggingface.co/models](https://huggingface.co/models) repository. Filter models by `llama.cpp` App tag to find compatible models.
 
 ### Supported Platforms
 
 - **Operating systems**  
   Linux and Windows
 - **Hardware architectures**  
-  x86_64 for Edge AI engines  
-  x86, x86_64, ARM, and AArch64 for simulated Edge AI clients
+  x86, x86_64, ARM, and AArch64
 
 ---
 
