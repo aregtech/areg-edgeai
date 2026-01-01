@@ -33,6 +33,7 @@
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_processText);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_processVideo);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_serviceConnected);
+DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_onActiveModelUpdate);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_onQueueSizeUpdate);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_onEdgeAgentUpdate);
 DEF_LOG_SCOPE(multiedge_edgedevice_AgentConsumer_responseProcessText);
@@ -121,7 +122,8 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
         ASSERT(getProxy() == &proxy);
         bool isConnected(status == NEService::eServiceConnection::ServiceConnected);
         LOG_DBG("AgentConsumer service connection status: %s, proxy: %s", NEService::getString(status), proxy.getProxyAddress().getServiceName().getString());
-
+        
+        notifyOnActiveModelUpdate(isConnected);
         notifyOnQueueSizeUpdate(isConnected);
         notifyOnEdgeAgentUpdate(isConnected);
         mConsumerId = isConnected ? NEMath::crc32Calculate(getRoleName().getString()) : static_cast<uint32_t>(NEMath::CHECKSUM_IGNORE);
@@ -129,6 +131,7 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
         ASSERT(mEdgeDevice != nullptr);
         if (isConnected)
         {
+            connect(this, &AgentConsumer::signalActiveModelChanged   , mEdgeDevice, &EdgeDevice::slotActiveModelChanged    , Qt::ConnectionType::QueuedConnection);
             connect(this, &AgentConsumer::signalAgentQueueSize       , mEdgeDevice, &EdgeDevice::slotAgentQueueSize        , Qt::ConnectionType::QueuedConnection);
             connect(this, &AgentConsumer::signalAgentType            , mEdgeDevice, &EdgeDevice::slotAgentType             , Qt::ConnectionType::QueuedConnection);
             connect(this, &AgentConsumer::signalTextProcessed        , mEdgeDevice, &EdgeDevice::slotTextProcessed         , Qt::ConnectionType::QueuedConnection);
@@ -137,7 +140,7 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
         }
         else
         {
-            disconnect(this, &AgentConsumer::signalAgentQueueSize       , mEdgeDevice, &EdgeDevice::slotAgentQueueSize);
+            disconnect(this, &AgentConsumer::signalActiveModelChanged   , mEdgeDevice, &EdgeDevice::slotActiveModelChanged);
             disconnect(this, &AgentConsumer::signalAgentType            , mEdgeDevice, &EdgeDevice::slotAgentType);
             disconnect(this, &AgentConsumer::signalTextProcessed        , mEdgeDevice, &EdgeDevice::slotTextProcessed);
             disconnect(this, &AgentConsumer::signalVideoProcessed       , mEdgeDevice, &EdgeDevice::slotVideoProcessed);
@@ -148,6 +151,14 @@ bool AgentConsumer::serviceConnected(NEService::eServiceConnection status, Proxy
     }
 
     return result;
+}
+
+void AgentConsumer::onActiveModelUpdate( const String & ActiveModel, NEService::eDataStateType state )
+{
+    LOG_SCOPE(multiedge_edgedevice_AgentConsumer_onActiveModelUpdate);
+    LOG_DBG("Agent's model updated, new model: %s, state: %s", ActiveModel.getString(), NEService::getString(state));
+    
+    emit signalActiveModelChanged(state == NEService::eDataStateType::DataIsOK ? QString::fromStdString(ActiveModel.getData()) : QString());
 }
 
 void AgentConsumer::onQueueSizeUpdate(unsigned int QueueSize, NEService::eDataStateType state)

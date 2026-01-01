@@ -62,7 +62,9 @@ public:
 signals:
 
     void signalServiceConnected(bool isConnected);
-
+    
+    void signalActiveModelChanged(QString modelName);
+    
     void signalAgentQueueSize(uint32_t queueSize);
 
     void signalAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
@@ -89,7 +91,18 @@ protected:
      * \return  Return true if this service connect notification was relevant to client object.
      **/
     virtual bool serviceConnected( NEService::eServiceConnection status, ProxyBase & proxy ) override;
-
+    
+    /**
+     * \brief   Triggered, when ActiveModel attribute is updated. The function contains
+     *          attribute value and validation flag. When notification is enabled,
+     *          the method should be overwritten in derived class.
+     *          Attributes ActiveModel description:
+     *          The name of active model.
+     * \param   ActiveModel The value of ActiveModel attribute.
+     * \param   state       The data validation flag.
+     **/
+    virtual void onActiveModelUpdate( const String & ActiveModel, NEService::eDataStateType state ) override;
+    
     /**
      * \brief   Triggered, when QueueSize attribute is updated. The function contains
      *          attribute value and validation flag. When notification is enabled,

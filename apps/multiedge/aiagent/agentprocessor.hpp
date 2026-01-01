@@ -39,12 +39,15 @@ public:
         , ActionProcessVideo
         , ActionReplyText
         , ActionReplyVideo
+        , ActionActivateModel
+        , ActionModelActivated
     };
 
 public:
     AgentProcessorEventData(void);
-    AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, const String& modelPath);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
     AgentProcessorEventData(const AgentProcessorEventData& data);
     AgentProcessorEventData(AgentProcessorEventData&& data) noexcept;
     ~AgentProcessorEventData(void) = default;
@@ -61,6 +64,8 @@ public:
     inline const SharedBuffer& getVideo(void) const;
 
     inline uint32_t getSessionId(void) const;
+    
+    inline const String& getModelPath(void) const;
 
     inline void reset(void);
 
@@ -68,6 +73,7 @@ private:
     eAction         mAction;  
     uint32_t        mSessionId;
     String          mPrompt;
+    String          mModelPath;
     SharedBuffer    mVideo;
 };
 
@@ -110,15 +116,32 @@ protected:
     
 private:
     String processText(const String & prompt);
+    
+    /**
+     * \brief   Activates or loads the LLM model to be used by the agent.
+     *
+     * This function prepares the internal LLM context for inference using the
+     * model specified by \a modelPath. It may release any previously loaded
+     * model and update the internal state (e.g. model path, context handle
+     * and related parameters) to reflect the newly activated model.
+     *
+     * \param   modelPath   Filesystem path to the LLM model to activate.
+     *
+     * \return  A status or informational string related to the activation
+     *          operation (for example, the effective model path or error
+     *          description).
+     **/
+    String activateModel(const String& modelPath);
 
     inline AgentProcessor& self();
     
 private:
     ComponentThread*        mCompThread;
     AgentProcessorEventData mCurEvent;
+    String                  mModelPath;
     llama_context_params    mLLMParams;
     uint32_t                mTextLimit;
-    uint32_t                mTokenLimit; 
+    uint32_t                mTokenLimit;
     llama_context*          mLLMHandle;
 };
 
@@ -144,6 +167,11 @@ inline const SharedBuffer& AgentProcessorEventData::getVideo(void) const
 inline uint32_t AgentProcessorEventData::getSessionId(void) const
 {
     return mSessionId;
+}
+
+inline const String& AgentProcessorEventData::getModelPath(void) const
+{
+    return mModelPath;
 }
 
 inline void AgentProcessorEventData::reset(void)

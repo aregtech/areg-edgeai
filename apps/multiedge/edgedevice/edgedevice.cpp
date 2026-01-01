@@ -44,6 +44,12 @@ EdgeDevice::~EdgeDevice()
     delete ui;
 }
 
+void EdgeDevice::slotActiveModelChanged(const QString modelName)
+{
+    ctrlActiveModel()->setText(modelName);
+}
+
+
 void EdgeDevice::slotAgentQueueSize(uint32_t queueSize)
 {
     ui->TxtQueueSize->setText(QString::number(queueSize));
@@ -150,6 +156,11 @@ inline QPushButton* EdgeDevice::ctrlClose(void) const
 inline QTabWidget* EdgeDevice::ctrlTab(void) const
 {
     return ui->tabWidget;
+}
+
+inline QLineEdit* EdgeDevice::ctrlActiveModel(void) const
+{
+    return ui->TxtActiveModel;
 }
 
 void EdgeDevice::setupData(void)

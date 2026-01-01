@@ -19,18 +19,31 @@
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "areg/component/ComponentThread.hpp"
 
+#include <QFileInfo>
+
 AgentProcessorEventData::AgentProcessorEventData(void)
     : mAction   (ActionUnknown)
     , mSessionId(0)
     , mPrompt   ( )
+    , mModelPath( )
     , mVideo    ( )
 {
 }
 
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, const String& modelPath)
+    : mAction   (action)
+    , mSessionId(0xFFFFFFFFu)
+    , mPrompt   ( )
+    , mModelPath(modelPath)
+    , mVideo    ( )
+{
+}
+    
 AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt)
     : mAction   (action)
     , mSessionId(sessionId)
     , mPrompt   (prompt)
+    , mModelPath( )
     , mVideo    ( )
 {
 }
@@ -39,6 +52,7 @@ AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eActio
     : mAction   (action)
     , mSessionId(sessionId)
     , mPrompt   (prompt)
+    , mModelPath( )
     , mVideo    (video)
 {
 }
@@ -47,6 +61,7 @@ AgentProcessorEventData::AgentProcessorEventData(const AgentProcessorEventData& 
     : mAction   (data.mAction)
     , mSessionId(data.mSessionId)
     , mPrompt   (data.mPrompt)
+    , mModelPath(data.mModelPath)
     , mVideo    (data.mVideo)
 {
 }
@@ -55,6 +70,7 @@ AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData&& data)
     : mAction   (data.mAction)
     , mSessionId(data.mSessionId)
     , mPrompt   (std::move(data.mPrompt))
+    , mModelPath(std::move(data.mModelPath))
     , mVideo    (std::move(data.mVideo))
 {
 }
@@ -66,6 +82,7 @@ AgentProcessorEventData& AgentProcessorEventData::operator = (const AgentProcess
         mAction     = data.mAction;
         mSessionId  = data.mSessionId;
         mPrompt     = data.mPrompt;
+        mModelPath  = data.mModelPath;
         mVideo      = data.mVideo;
     }
 
@@ -79,6 +96,7 @@ AgentProcessorEventData& AgentProcessorEventData::operator = (AgentProcessorEven
         mAction     = data.mAction;
         mSessionId  = data.mSessionId;
         mPrompt     = std::move(data.mPrompt);
+        mModelPath  = std::move(data.mModelPath);
         mVideo      = std::move(data.mVideo);
     }
 
@@ -120,9 +138,21 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         String response = processText(data.getPrompt());
         AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionReplyText, data.getSessionId(), response), static_cast<DispatcherThread &>(*mCompThread));
     }
+    else if (data.getAction() == AgentProcessorEventData::ActionActivateModel)
+    {
+        mModelPath = activateModel(data.getModelPath());
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionModelActivated, mModelPath), static_cast<DispatcherThread &>(*mCompThread));
+    }
 }
 
 String AgentProcessor::processText(const String& prompt)
 {
+    // TODO: implement text processing here
     return String();
+}
+
+String AgentProcessor::activateModel(const String& modelPath)
+{
+    // TODO: implement model activation here
+    return modelPath;
 }

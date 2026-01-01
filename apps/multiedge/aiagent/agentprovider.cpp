@@ -25,6 +25,8 @@
 #include "areg/component/ComponentThread.hpp"
 #include "areg/logging/GELog.h"
 
+#include <QFileInfo>
+
 DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_startupServiceInterface);
 DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
 DEF_LOG_SCOPE(multiedge_aiagent_AgentProvider_requestProcessText);
@@ -36,6 +38,16 @@ AgentProvider* AgentProvider::getService(void)
     return static_cast<AgentProvider *>(Component::findComponentByName(NEMultiEdgeSettings::SERVICE_PROVIDER));
 }
 
+void AgentProvider::activateModel(const QString & modelPath)
+{
+    AgentProvider* service = getService();
+    if ((service != nullptr) && (service->mWorkerThread != nullptr) && (modelPath.isEmpty() == false))
+    {
+        String model(modelPath.toStdString());
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model), *(service->mWorkerThread));
+    }
+}
+
 AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner)
     : QObject       (nullptr)
     , Component     (entry, owner)
@@ -44,7 +56,7 @@ AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentT
     , mAIAgent      (std::any_cast<AIAgent*>(entry.getComponentData()))
     , mAgentState   (eAgentState::StateReady)
     , mListSessions ()
-    , mWorkerThread ()
+    , mWorkerThread (nullptr)
     , mAgentProcessor()
 {
     ASSERT(mAIAgent != nullptr);
@@ -59,24 +71,38 @@ void AgentProvider::startupServiceInterface(Component& holder)
     AgentProcessorEvent::addListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
     setEdgeAgent(NEMultiEdge::AgentLLM);
     setQueueSize(0);
-
-    connect(this, &AgentProvider::signalQueueSize       , mAIAgent, &AIAgent::slotAgentQueueSize, Qt::ConnectionType::QueuedConnection);
-    connect(this, &AgentProvider::signalEdgeAgent       , mAIAgent, &AIAgent::slotAgentType     , Qt::ConnectionType::QueuedConnection);
-    connect(this, &AgentProvider::signalTextRequested   , mAIAgent, &AIAgent::slotTextRequested , Qt::ConnectionType::QueuedConnection);
-    connect(this, &AgentProvider::signalTextProcessed   , mAIAgent, &AIAgent::slotTextProcessed , Qt::ConnectionType::QueuedConnection);
-
+    
+    connect(this, &AgentProvider::signalServiceStarted    , mAIAgent, &AIAgent::slotServiceStarted    , Qt::ConnectionType::QueuedConnection);
+    connect(this, &AgentProvider::signalActiveModelChanged, mAIAgent, &AIAgent::slotActiveModelChanged, Qt::ConnectionType::QueuedConnection);
+    connect(this, &AgentProvider::signalQueueSize         , mAIAgent, &AIAgent::slotAgentQueueSize    , Qt::ConnectionType::QueuedConnection);
+    connect(this, &AgentProvider::signalEdgeAgent         , mAIAgent, &AIAgent::slotAgentType         , Qt::ConnectionType::QueuedConnection);
+    connect(this, &AgentProvider::signalTextRequested     , mAIAgent, &AIAgent::slotTextRequested     , Qt::ConnectionType::QueuedConnection);
+    connect(this, &AgentProvider::signalTextProcessed     , mAIAgent, &AIAgent::slotTextProcessed     , Qt::ConnectionType::QueuedConnection);
+    
+    emit signalServiceStarted(true);
     emit signalEdgeAgent(NEMultiEdge::AgentLLM);
     emit signalQueueSize(0);
+    
+    ASSERT(mWorkerThread != nullptr);
+    ASSERT(mWorkerThread->isReady());
+    QString modelPath = mAIAgent->getActiveModelPath();
+    String model(modelPath.toStdString());
+    AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model), *mWorkerThread);
 }
 
 void AgentProvider::shutdownServiceInterface(Component& holder)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
+
+    mWorkerThread = nullptr;
+    emit signalServiceStarted(false);
     
-    disconnect(this, &AgentProvider::signalQueueSize    , mAIAgent, &AIAgent::slotAgentQueueSize);
-    disconnect(this, &AgentProvider::signalEdgeAgent    , mAIAgent, &AIAgent::slotAgentType     );
-    disconnect(this, &AgentProvider::signalTextRequested, mAIAgent, &AIAgent::slotTextRequested );
-    disconnect(this, &AgentProvider::signalTextProcessed, mAIAgent, &AIAgent::slotTextProcessed );
+    disconnect(this, &AgentProvider::signalServiceStarted    , mAIAgent, &AIAgent::slotServiceStarted);
+    disconnect(this, &AgentProvider::signalActiveModelChanged, mAIAgent, &AIAgent::slotActiveModelChanged);
+    disconnect(this, &AgentProvider::signalQueueSize         , mAIAgent, &AIAgent::slotAgentQueueSize);
+    disconnect(this, &AgentProvider::signalEdgeAgent         , mAIAgent, &AIAgent::slotAgentType     );
+    disconnect(this, &AgentProvider::signalTextRequested     , mAIAgent, &AIAgent::slotTextRequested );
+    disconnect(this, &AgentProvider::signalTextProcessed     , mAIAgent, &AIAgent::slotTextProcessed );
 
     AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(self()), holder.getMasterThread());
     MultiEdgeStub::shutdownServiceInterface(holder);
@@ -96,9 +122,8 @@ void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agen
     if (mAgentState == eAgentState::StateReady)
     {
         mAgentState = eAgentState::StateBusy;
-        DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
-        ASSERT(worker.isValid());
-        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, unblock, textProcess), worker);
+        ASSERT(mWorkerThread != nullptr);
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, unblock, textProcess), *mWorkerThread);
     }
 }
 
@@ -107,10 +132,16 @@ void AgentProvider::requestProcessVideo(unsigned int sessionId, bool agentId, co
     LOG_SCOPE(multiedge_aiagent_AgentProvider_requestProcessVideo);
 }
 
-IEWorkerThreadConsumer* AgentProvider::workerThreadConsumer(const String& consumerName, const String& workerThreadName)
+IEWorkerThreadConsumer* AgentProvider::workerThreadConsumer(const String& /*consumerName*/, const String& /*workerThreadName*/)
 {
-    mWorkerThread = workerThreadName;
     return &mAgentProcessor;
+}
+
+void AgentProvider::notifyWorkerThreadStarted(IEWorkerThreadConsumer& /*consumer*/, WorkerThread& workerThread)
+{
+    ASSERT(workerThread.isValid());
+    ASSERT(workerThread.isRunning());
+    mWorkerThread = &workerThread;
 }
 
 void AgentProvider::processEvent(const AgentProcessorEventData& data)
@@ -148,15 +179,26 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
                             , nextPrompt.agentSession
                             , static_cast<uint32_t>(mListSessions.size()));
 
-                DispatcherThread& worker = DispatcherThread::getDispatcherThread(mWorkerThread);
-                ASSERT(worker.isValid());
-                AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, nextPrompt.sessionId, nextPrompt.prompt), worker);
+                ASSERT(mWorkerThread != nullptr);
+                ASSERT(mWorkerThread->isRunning());
+                AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionProcessText, nextPrompt.sessionId, nextPrompt.prompt), *mWorkerThread);
             }
             else
             {
                 mAgentState = eAgentState::StateReady;
                 LOG_INFO("No more text prompts in the queue, agent state set to Ready");
             }
+        }
+    }
+    else if (data.getAction() == AgentProcessorEventData::eAction::ActionModelActivated)
+    {
+        QString modelPath(QString::fromStdString(data.getModelPath().getData()));
+        if (modelPath.isEmpty() == false)
+        {
+            QFileInfo fi(modelPath);
+            QString fileName(fi.fileName());
+            setActiveModel(fileName.toStdString());
+            emit signalActiveModelChanged(fileName);
         }
     }
 }

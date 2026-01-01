@@ -22,6 +22,7 @@
  ************************************************************************/
 #include <QDialog>
 
+#include <QList>
 #include "multiedge/resources/NEMultiEdge.hpp"
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -32,6 +33,8 @@ QT_END_NAMESPACE
 class AgentChatHistory;
 class QPushButton;
 class QLineEdit;
+class QListWidget;
+class QListWidgetItem;
 class QTableView;
 class QTabWidget;
 class QWidget;
@@ -44,9 +47,15 @@ public:
     AIAgent(QWidget *parent = nullptr);
     ~AIAgent();
     
+    inline QString getActiveModelPath(void) const;
+    
 public slots:
     
+    void slotServiceStarted(bool isStarted);
+    
     void slotAgentQueueSize(uint32_t queueSize);
+    
+    void slotActiveModelChanged(QString modelName);
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
 
@@ -68,10 +77,23 @@ private:
     inline QTableView* ctrlTable(void) const;
     inline QPushButton* ctrlClose(void) const;
     inline QTabWidget* ctrlTab(void) const;
+    inline QListWidget* ctrlModels(void) const;
+    inline QPushButton* ctrlActivate(void) const;
+    inline QLineEdit* ctrlLocation(void) const;
+    inline QPushButton* ctrlBrowse(void) const;
+    inline QLineEdit* ctrlActiveModel(void) const;
     
 private slots:
     
     void onConnectClicked(bool checked);
+    
+    void onActivateClicked(bool clicked);
+    
+    void onModelLocationClicked(bool clicked);    
+    
+    void onModelsDoubleClicked(QListWidgetItem *item);
+    
+    void onModelsRowChanged(int currentRow);
     
 private:
     void setupData(void);
@@ -83,11 +105,23 @@ private:
     bool routerConnect(void);
     
     void routerDisconnect(void);
+    
+    QStringList scanTextLlamaModels(const QString& modelPath);
 
 private:
     Ui::AIAgent*        ui;
     QString             mAddress;
     uint16_t            mPort;
+    bool                mServiceStarted;
     AgentChatHistory*   mModel;
+    QString             mModelDir;
+    QString             mAIModelName;
+    QString             mAIModelPath;
 };
+
+inline QString AIAgent::getActiveModelPath(void) const
+{
+    return mAIModelPath;
+}
+
 #endif // MULTIEDGE_AIAGENT_AIAGENT_HPP

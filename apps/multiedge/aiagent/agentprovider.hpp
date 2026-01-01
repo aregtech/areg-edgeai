@@ -56,7 +56,16 @@ private:
 // Internal types, constants and static methods
 //////////////////////////////////////////////////////////////////////////
 public:
+
+    //!< Returns pointer to the this service provider object.
     static AgentProvider* getService(void);
+    
+    /**
+     * \brief   Activates or switches the AI model used by the agent service.
+     * \param   modelPath   File system path or identifier of the model to activate.
+     * \note    This is a static helper to configure the model before or during service usage.
+     **/
+    static void activateModel(const QString & modelPath);
     
 public:
     AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner);
@@ -101,6 +110,14 @@ protected:
      **/
     virtual IEWorkerThreadConsumer* workerThreadConsumer(const String& consumerName, const String& workerThreadName) override;
 
+    /**
+     * \brief   This function is called when worker thread is started.
+     *          Override this function to perform additional operations
+     *          when worker thread is started.
+     * \param   consumer        The worker thread consumer object
+     * \param   workerThread    The worker thread, which is started.
+     **/
+    virtual void notifyWorkerThreadStarted(IEWorkerThreadConsumer& consumer, WorkerThread& workerThread);
 
     /**
      * \brief  Override operation. Implement this function to receive events and make processing
@@ -131,9 +148,13 @@ protected:
     virtual void shutdownServiceInterface ( Component & holder ) override;
 
 signals:
-
+    
+    void signalServiceStarted(bool isStarted);
+    
     void signalEdgeAgent(NEMultiEdge::eEdgeAgent newValue);
-
+    
+    void signalActiveModelChanged(QString modelName);
+    
     void signalQueueSize(uint32_t queueSize);
 
     void signalTextRequested(uint32_t seqId, uint32_t id, QString question, uint64_t stamp);
@@ -148,7 +169,7 @@ private:
     AIAgent*        mAIAgent;
     eAgentState     mAgentState;
     ListSession     mListSessions;
-    String          mWorkerThread;
+    WorkerThread*   mWorkerThread;
     AgentProcessor  mAgentProcessor;
 };
 

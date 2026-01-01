@@ -26,6 +26,9 @@
 #include "multiedge/aiagent/agentprovider.hpp"
 #include "multiedge/aiagent/agentchathistory.hpp"
 
+#include <QDir>
+#include <QFileDialog>
+#include <QListWidgetItem>
 #include <any>
 
 BEGIN_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
@@ -42,7 +45,11 @@ AIAgent::AIAgent(QWidget *parent)
     , ui        (new Ui::AIAgent)
     , mAddress  (QString::fromStdString(NEMultiEdgeSettings::ROUTER_ADDRESS.data()))
     , mPort     (NEMultiEdgeSettings::ROUTER_PORT)
+    , mServiceStarted(false)
     , mModel    (nullptr)
+    , mModelDir ( )
+    , mAIModelName( )
+    , mAIModelPath( )
 {
     ui->setupUi(this);
     setupData();
@@ -56,9 +63,19 @@ AIAgent::~AIAgent()
     delete ui;
 }
 
+void AIAgent::slotServiceStarted(bool isStarted)
+{
+    mServiceStarted = isStarted;
+}
+
 void AIAgent::slotAgentQueueSize(uint32_t queueSize)
 {
     ui->TxtQueueSize->setText(QString::number(queueSize));
+}
+
+void AIAgent::slotActiveModelChanged(QString modelName)
+{
+    ctrlActiveModel()->setText(modelName);
 }
 
 void AIAgent::slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent)
@@ -145,6 +162,102 @@ inline QTabWidget* AIAgent::ctrlTab(void) const
     return ui->tabWidget;
 }
 
+inline QListWidget* AIAgent::ctrlModels(void) const
+{
+    return ui->ListModels;
+}
+
+inline QPushButton* AIAgent::ctrlActivate(void) const
+{
+    return ui->BtnActivate;
+}
+
+inline QLineEdit* AIAgent::ctrlLocation(void) const
+{
+    return ui->TxtModelDir;
+}
+
+inline QPushButton* AIAgent::ctrlBrowse(void) const
+{
+    return ui->BtnBrowse;
+}
+
+inline QLineEdit* AIAgent::ctrlActiveModel(void) const
+{
+    return ui->TxtActiveModel;
+}
+
+void AIAgent::onActivateClicked(bool clicked)
+{
+    QListWidget* listModels = ctrlModels();
+    onModelsDoubleClicked(listModels->currentItem());
+}
+
+void AIAgent::onModelLocationClicked(bool clicked)
+{
+    QFileDialog dlgFile(  this
+                        , QString(tr("Select AI Model Directory"))
+                        , mModelDir
+                        , QString(""));
+    dlgFile.setLabelText(QFileDialog::DialogLabel::FileName, QString(tr("AI Model Location:")));
+    
+    
+    dlgFile.setOptions(QFileDialog::Option::ShowDirsOnly);
+    dlgFile.setFileMode(QFileDialog::Directory);
+    if (mModelDir.isEmpty())
+    {
+        QDir curDir(QDir::current());
+        dlgFile.setDirectory(curDir.exists() ? curDir.absolutePath() : QString());
+    }
+    else
+    {
+        dlgFile.setDirectory(mModelDir);
+    }
+    
+    if (dlgFile.exec() == static_cast<int>(QDialog::DialogCode::Accepted))
+    {
+        QStringList models{ scanTextLlamaModels(dlgFile.directory().path()) };
+        if (models.isEmpty() == false)
+        {
+            QListWidget* listModels = ctrlModels();
+            listModels->clear();
+            listModels->addItems(models);
+            listModels->setCurrentRow(-1);
+            QList<QListWidgetItem*> items = listModels->findItems(mAIModelName, Qt::MatchExactly);
+            if (items.isEmpty() == false)
+            {
+                listModels->setCurrentItem(items[0]);
+            }
+        }
+    }
+}
+
+void AIAgent::onModelsDoubleClicked(QListWidgetItem *item)
+{
+    if (item == nullptr)
+        return;
+    
+    QString modelName = item->text();
+    if (modelName.isEmpty())
+        return;
+    
+    QFileInfo fi(mModelDir, modelName);
+    if (fi.exists())
+    {
+        mAIModelName = modelName;
+        mAIModelPath = fi.absoluteFilePath();
+        AgentProvider::activateModel(mAIModelPath);
+    }
+}
+
+void AIAgent::onModelsRowChanged(int currentRow)
+{
+    Q_ASSERT(ctrlModels() != nullptr);
+    QListWidgetItem * item = (currentRow >= 0) && ((currentRow >= ctrlModels()->count())) ? ctrlModels()->item(currentRow) : nullptr;
+    QString modelName = item != nullptr ? item->text() : "";
+    ctrlActivate()->setEnabled(modelName.isEmpty() == false);
+}
+
 void AIAgent::setupData(void)
 {
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
@@ -159,6 +272,7 @@ void AIAgent::setupData(void)
     ctrlPort()->setText(QString::number(mPort));
     ui->TxtQueueSize->setText("N/A");
     ui->TxtAgentType->setText("N/A");
+    ui->TxtModelDir->setText("N/A");
     
     mModel = new AgentChatHistory(this);
     ctrlTable()->setModel(mModel);
@@ -171,31 +285,49 @@ void AIAgent::setupWidgets(void)
     
     // Ensure the header is explicitly shown. Designer settings / style sheets can keep it hidden,
     // and changing resize mode on a hidden header has no visible effect.
-    if (QTableView* table = ctrlTable())
+    QTableView* table = ctrlTable();
+    ASSERT(table != nullptr);
+    table->setCornerButtonEnabled(false);
+        
+    if (QHeaderView* header = table->horizontalHeader())
     {
-        table->setCornerButtonEnabled(false);
-        
-        if (QHeaderView* header = table->horizontalHeader())
-        {
-            header->setVisible(true);
-            header->setHighlightSections(false);
-            header->setSectionsClickable(true);
-            header->setStretchLastSection(true);
-            header->setSectionResizeMode(QHeaderView::Interactive);
-            header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
-            header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
-            header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
-            header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
-        }
-        
-        table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-        table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-        
-        // Make sure the view has some header height calculated and repaints with updated header state.
-        table->updateGeometry();
-        table->viewport()->update();
+        header->setVisible(true);
+        header->setHighlightSections(false);
+        header->setSectionsClickable(true);
+        header->setStretchLastSection(true);
+        header->setSectionResizeMode(QHeaderView::Interactive);
+        header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
+        header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
+        header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
+        header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
     }
+        
+    table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        
+    // Make sure the view has some header height calculated and repaints with updated header state.
+    table->updateGeometry();
+    table->viewport()->update();
     
+    ctrlActiveModel()->setText("N/A");
+    QListWidget* listModels = ctrlModels();
+    listModels->clear();
+    QStringList list = scanTextLlamaModels(QString());
+    ctrlLocation()->setText(mModelDir);
+    listModels->addItems(list);
+    if (list.isEmpty() == false)
+    {
+        listModels->setCurrentRow(0);
+        mAIModelName = list[0];
+        ctrlConnect()->setEnabled(true);
+        QFileInfo fi(mModelDir, mAIModelName);
+        mAIModelPath = fi.absoluteFilePath();
+    }
+    else
+    {
+        ctrlConnect()->setEnabled(false);
+    }
+        
     ctrlTab()->setCurrentIndex(0);
 }
 
@@ -203,6 +335,10 @@ void AIAgent::setupSignals(void)
 {
     connect(ctrlClose()     , &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close();});
     connect(ctrlConnect()   , &QPushButton::clicked, this, &AIAgent::onConnectClicked);
+    connect(ctrlActivate()  , &QPushButton::clicked, this, &AIAgent::onActivateClicked);
+    connect(ctrlBrowse()    , &QPushButton::clicked, this, &AIAgent::onModelLocationClicked);
+    connect(ctrlModels()    , &QListWidget::itemDoubleClicked, this, &AIAgent::onModelsDoubleClicked);
+    connect(ctrlModels()    , &QListWidget::currentRowChanged, this, &AIAgent::onModelsRowChanged);
 }
 
 bool AIAgent::routerConnect(void)
@@ -221,6 +357,14 @@ bool AIAgent::routerConnect(void)
             ctrlTab()->setCurrentIndex(1);
             if (ComponentLoader::setComponentData(NEMultiEdgeSettings::SERVICE_PROVIDER.data(), std::make_any<AIAgent *>(this)))
             {
+                QListWidgetItem * item = ctrlModels()->currentItem();
+                if (item != nullptr)
+                {
+                    mAIModelName = item->text();
+                }
+                
+                QFileInfo fi(mModelDir, mAIModelName);
+                mAIModelPath = fi.exists() ? fi.absoluteFilePath() : QString();
                 return Application::loadModel(NEMultiEdgeSettings::MODEL_PROVIDER.data());
             }
         }
@@ -231,13 +375,14 @@ bool AIAgent::routerConnect(void)
 
 void AIAgent::routerDisconnect(void)
 {
-    Application::unloadModel(NEMultiEdgeSettings::MODEL_CONSUMER.data());
+    Application::unloadModel(NEMultiEdgeSettings::MODEL_PROVIDER.data());
+    mServiceStarted = false;
     Application::stopMessageRouting();
 }
 
 void AIAgent::onConnectClicked(bool checked)
 {
-    if (Application::isRouterConnected() == false)
+    if ((Application::isRouterConnected() == false) && (Application::isRouterConnectionPending() == false))
     {
         if (routerConnect())
         {
@@ -261,5 +406,29 @@ void AIAgent::onConnectClicked(bool checked)
         ctrlConnect()->setText(tr("&Connect"));
         ctrlConnect()->setIcon(QIcon::fromTheme(QString::fromUtf8("network-wireless")));
         ctrlConnect()->setShortcut(QCoreApplication::translate("AIAgent", "Alt+C", nullptr));
+    }
+}
+
+QStringList AIAgent::scanTextLlamaModels(const QString& modelPath)
+{
+    if (modelPath.isEmpty())
+    {
+        // Directory is relative to the current working directory (QDir::current()).
+        constexpr const char ModelsRelPath[]{ "models/llama/text" };
+        QDir dir(QDir::current().filePath(QString::fromUtf8(ModelsRelPath)));
+        return scanTextLlamaModels(dir.absolutePath());
+    }
+    else
+    {
+        QDir dir(modelPath);
+        if (dir.exists() == false)
+            return QStringList{};
+        
+        mModelDir = dir.absolutePath();
+        dir.setFilter(QDir::Files | QDir::Readable | QDir::NoDotAndDotDot);
+        dir.setSorting(QDir::Name | QDir::IgnoreCase);
+        
+        // Return file names only, e.g. "model.gguf"
+        return dir.entryList(QStringList{ QString::fromUtf8("*.gguf") }, QDir::Files, QDir::Name | QDir::IgnoreCase);
     }
 }
