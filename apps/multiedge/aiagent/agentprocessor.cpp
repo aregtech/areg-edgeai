@@ -147,10 +147,12 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
 
 String AgentProcessor::processText(const String& prompt)
 {
+    // TODO: implement text processing here
     return String();
 }
 
 String AgentProcessor::activateModel(const String& modelPath)
 {
+    // TODO: implement model activation here
     return modelPath;
 }

@@ -112,7 +112,7 @@ private:
     Ui::AIAgent*        ui;
     QString             mAddress;
     uint16_t            mPort;
-    bool                mServiceSrated;
+    bool                mServiceStarted;
     AgentChatHistory*   mModel;
     QString             mModelDir;
     QString             mAIModelName;

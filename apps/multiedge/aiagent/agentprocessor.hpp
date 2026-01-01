@@ -117,6 +117,20 @@ protected:
 private:
     String processText(const String & prompt);
     
+    /**
+     * \brief   Activates or loads the LLM model to be used by the agent.
+     *
+     * This function prepares the internal LLM context for inference using the
+     * model specified by \a modelPath. It may release any previously loaded
+     * model and update the internal state (e.g. model path, context handle
+     * and related parameters) to reflect the newly activated model.
+     *
+     * \param   modelPath   Filesystem path to the LLM model to activate.
+     *
+     * \return  A status or informational string related to the activation
+     *          operation (for example, the effective model path or error
+     *          description).
+     **/
     String activateModel(const String& modelPath);
 
     inline AgentProcessor& self();

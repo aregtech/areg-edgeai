@@ -95,7 +95,7 @@ void AgentProvider::shutdownServiceInterface(Component& holder)
     LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
 
     mWorkerThread = nullptr;
-    emit signalServiceStarted(true);
+    emit signalServiceStarted(false);
     
     disconnect(this, &AgentProvider::signalServiceStarted    , mAIAgent, &AIAgent::slotServiceStarted);
     disconnect(this, &AgentProvider::signalActiveModelChanged, mAIAgent, &AIAgent::slotActiveModelChanged);

@@ -45,7 +45,7 @@ AIAgent::AIAgent(QWidget *parent)
     , ui        (new Ui::AIAgent)
     , mAddress  (QString::fromStdString(NEMultiEdgeSettings::ROUTER_ADDRESS.data()))
     , mPort     (NEMultiEdgeSettings::ROUTER_PORT)
-    , mServiceSrated(false)
+    , mServiceStarted(false)
     , mModel    (nullptr)
     , mModelDir ( )
     , mAIModelName( )
@@ -65,7 +65,7 @@ AIAgent::~AIAgent()
 
 void AIAgent::slotServiceStarted(bool isStarted)
 {
-    mServiceSrated = isStarted;
+    mServiceStarted = isStarted;
 }
 
 void AIAgent::slotAgentQueueSize(uint32_t queueSize)
@@ -252,7 +252,8 @@ void AIAgent::onModelsDoubleClicked(QListWidgetItem *item)
 
 void AIAgent::onModelsRowChanged(int currentRow)
 {
-    QListWidgetItem * item = (currentRow >= 0) ? ctrlModels()->item(currentRow) : nullptr;
+    Q_ASSERT(ctrlModels() != nullptr);
+    QListWidgetItem * item = (currentRow >= 0) && ((currentRow >= ctrlModels()->count())) ? ctrlModels()->item(currentRow) : nullptr;
     QString modelName = item != nullptr ? item->text() : "";
     ctrlActivate()->setEnabled(modelName.isEmpty() == false);
 }
@@ -286,30 +287,27 @@ void AIAgent::setupWidgets(void)
     // and changing resize mode on a hidden header has no visible effect.
     QTableView* table = ctrlTable();
     ASSERT(table != nullptr);
-    if (table)
+    table->setCornerButtonEnabled(false);
+        
+    if (QHeaderView* header = table->horizontalHeader())
     {
-        table->setCornerButtonEnabled(false);
-        
-        if (QHeaderView* header = table->horizontalHeader())
-        {
-            header->setVisible(true);
-            header->setHighlightSections(false);
-            header->setSectionsClickable(true);
-            header->setStretchLastSection(true);
-            header->setSectionResizeMode(QHeaderView::Interactive);
-            header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
-            header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
-            header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
-            header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
-        }
-        
-        table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-        table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-        
-        // Make sure the view has some header height calculated and repaints with updated header state.
-        table->updateGeometry();
-        table->viewport()->update();
+        header->setVisible(true);
+        header->setHighlightSections(false);
+        header->setSectionsClickable(true);
+        header->setStretchLastSection(true);
+        header->setSectionResizeMode(QHeaderView::Interactive);
+        header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
+        header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
+        header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
+        header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
     }
+        
+    table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        
+    // Make sure the view has some header height calculated and repaints with updated header state.
+    table->updateGeometry();
+    table->viewport()->update();
     
     ctrlActiveModel()->setText("N/A");
     QListWidget* listModels = ctrlModels();
@@ -327,7 +325,7 @@ void AIAgent::setupWidgets(void)
     }
     else
     {
-        ctrlConnect()->setEnabled(true);
+        ctrlConnect()->setEnabled(false);
     }
         
     ctrlTab()->setCurrentIndex(0);
@@ -378,7 +376,7 @@ bool AIAgent::routerConnect(void)
 void AIAgent::routerDisconnect(void)
 {
     Application::unloadModel(NEMultiEdgeSettings::MODEL_PROVIDER.data());
-    mServiceSrated = false;
+    mServiceStarted = false;
     Application::stopMessageRouting();
 }
 
