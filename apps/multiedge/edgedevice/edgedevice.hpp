@@ -50,6 +50,8 @@ public slots:
     
     void slotServiceAvailable(bool isConnected);
     
+    void slotActiveModelChanged(const QString modelName);
+    
     void slotAgentQueueSize(uint32_t queueSize);
     
     void slotAgentType(NEMultiEdge::eEdgeAgent EdgeAgent);
@@ -73,6 +75,7 @@ private:
     inline QToolButton* ctrlSend(void) const;
     inline QPushButton* ctrlClose(void) const;
     inline QTabWidget* ctrlTab(void) const;
+    inline QLineEdit* ctrlActiveModel(void) const;
     
 private slots:
     

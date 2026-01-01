@@ -33,10 +33,13 @@ Problems trying to solve:
         </DataType>
     </DataTypeList>
     <AttributeList>
-        <Attribute ID="52" Name="QueueSize" DataType="uint32" Notify="OnChange">
+        <Attribute ID="52" Name="ActiveModel" DataType="String" Notify="OnChange">
+            <Description>The name of active model.</Description>
+        </Attribute>
+        <Attribute ID="71" Name="QueueSize" DataType="uint32" Notify="OnChange">
             <Description>The current size of the queue with pending requests to process.</Description>
         </Attribute>
-        <Attribute ID="71" Name="EdgeAgent" DataType="eEdgeAgent" Notify="OnChange">
+        <Attribute ID="85" Name="EdgeAgent" DataType="eEdgeAgent" Notify="OnChange">
             <Description>The type of active Edge AI agent</Description>
         </Attribute>
     </AttributeList>
@@ -50,7 +53,7 @@ Problems trying to solve:
                 <Parameter ID="73" Name="agentId" DataType="uint32">
                     <Description>The ID of edge device received in request, it is sent back to the edge device to confirm target device that the request is processed.</Description>
                 </Parameter>
-                <Parameter ID="82" Name="textReplied" DataType="String">
+                <Parameter ID="74" Name="textReplied" DataType="String">
                     <Description>The text replied by the Edge AI.</Description>
                 </Parameter>
             </ParamList>
@@ -58,13 +61,13 @@ Problems trying to solve:
         <Method ID="56" Name="ProcessText" MethodType="Request" Response="ProcessText">
             <Description>The request sent by edge device to process the text.</Description>
             <ParamList>
-                <Parameter ID="74" Name="sessionId" DataType="uint32">
+                <Parameter ID="75" Name="sessionId" DataType="uint32">
                     <Description>A unique ID of the session to distinguish the requests. The ID is sent back by the response.</Description>
                 </Parameter>
-                <Parameter ID="75" Name="agentId" DataType="uint32">
+                <Parameter ID="76" Name="agentId" DataType="uint32">
                     <Description>The ID of edge device. It is sent back to the edge device to confirm target device that the request is processed.</Description>
                 </Parameter>
-                <Parameter ID="81" Name="textProcess" DataType="String">
+                <Parameter ID="77" Name="textProcess" DataType="String">
                     <Description>The text to process.</Description>
                 </Parameter>
             </ParamList>
@@ -72,13 +75,13 @@ Problems trying to solve:
         <Method ID="59" Name="ProcessVideo" MethodType="Response">
             <Description>Response of processing a video data.</Description>
             <ParamList>
-                <Parameter ID="76" Name="sessionId" DataType="uint32">
+                <Parameter ID="78" Name="sessionId" DataType="uint32">
                     <Description>A unique ID of the session set by the edge device, received from request.</Description>
                 </Parameter>
-                <Parameter ID="77" Name="agentId" DataType="uint32">
+                <Parameter ID="79" Name="agentId" DataType="uint32">
                     <Description>The ID of edge device received in request, it is sent back to the edge device to confirm target device that the request is processed.</Description>
                 </Parameter>
-                <Parameter ID="83" Name="dataVideo" DataType="BinaryBuffer">
+                <Parameter ID="80" Name="dataVideo" DataType="BinaryBuffer">
                     <Description>A response data to send back to the edge device.</Description>
                 </Parameter>
             </ParamList>
@@ -86,13 +89,13 @@ Problems trying to solve:
         <Method ID="62" Name="ProcessVideo" MethodType="Request" Response="ProcessVideo">
             <Description>Process a video data</Description>
             <ParamList>
-                <Parameter ID="78" Name="sessionId" DataType="uint32">
+                <Parameter ID="81" Name="sessionId" DataType="uint32">
                     <Description>An ID set by edge device to process video. The ID is unique on edge device side.</Description>
                 </Parameter>
-                <Parameter ID="79" Name="agentId" DataType="bool">
+                <Parameter ID="82" Name="agentId" DataType="bool">
                     <Description>The ID of edge device. It is sent back to the edge device to confirm target device that the request is processed.</Description>
                 </Parameter>
-                <Parameter ID="80" Name="cmdText" DataType="String">
+                <Parameter ID="83" Name="cmdText" DataType="String">
                     <Description>A command as a string to request to process video data.</Description>
                 </Parameter>
                 <Parameter ID="84" Name="dataVideo" DataType="BinaryBuffer">
