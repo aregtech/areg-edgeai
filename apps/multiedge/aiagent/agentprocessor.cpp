@@ -20,7 +20,7 @@
 #include "areg/component/ComponentThread.hpp"
 
 #include <QFileInfo>
-#include <cmath>
+#include <algorithm>
 #include <thread>
 
 AgentProcessorEventData::AgentProcessorEventData(void)

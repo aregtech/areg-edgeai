@@ -133,6 +133,7 @@ private:
      **/
     String activateModel(const String& modelPath);
     
+    //!< Releases the currently active LLM model and associated context.
     void freeModel();
 
     inline AgentProcessor& self();

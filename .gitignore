@@ -47,3 +47,4 @@
 # other directories
 .vs/
 build/
+*.gguf
