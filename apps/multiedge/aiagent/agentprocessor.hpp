@@ -132,6 +132,9 @@ private:
      *          description).
      **/
     String activateModel(const String& modelPath);
+    
+    //!< Releases the currently active LLM model and associated context.
+    void freeModel();
 
     inline AgentProcessor& self();
     
@@ -142,6 +145,7 @@ private:
     llama_context_params    mLLMParams;
     uint32_t                mTextLimit;
     uint32_t                mTokenLimit;
+    llama_model*            mLLMModel;
     llama_context*          mLLMHandle;
 };
 

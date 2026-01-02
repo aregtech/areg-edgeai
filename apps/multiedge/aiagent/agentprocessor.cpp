@@ -20,6 +20,8 @@
 #include "areg/component/ComponentThread.hpp"
 
 #include <QFileInfo>
+#include <algorithm>
+#include <thread>
 
 AgentProcessorEventData::AgentProcessorEventData(void)
     : mAction   (ActionUnknown)
@@ -111,8 +113,11 @@ AgentProcessor::AgentProcessor(void)
     , mLLMParams            (llama_context_default_params())
     , mTextLimit            (512)
     , mTokenLimit           (2048)
+    , mLLMModel             (nullptr)
     , mLLMHandle            (nullptr)
 {
+    mLLMParams.n_ctx = 2048;   // safe default, tune later
+    mLLMParams.n_threads = std::max(1u, std::thread::hardware_concurrency());
 }
 
 void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentThread& masterThread)
@@ -123,6 +128,7 @@ void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentT
 
 void AgentProcessor::unregisterEventConsumers(WorkerThread& workThread)
 {
+    freeModel();
     mCompThread = nullptr;
     AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(*this), static_cast<DispatcherThread&>(workThread));
 }
@@ -153,6 +159,43 @@ String AgentProcessor::processText(const String& prompt)
 
 String AgentProcessor::activateModel(const String& modelPath)
 {
-    // TODO: implement model activation here
+    if (modelPath.isEmpty())
+        return String();
+
+    const QString qPath = QString::fromUtf8(modelPath.getString());
+    QFileInfo fi(qPath);
+    if (!fi.exists() || !fi.isFile())
+        return String();
+
+    // Cleanup previous model/context
+    freeModel();
+    
+    // Load model
+    const QByteArray utf8Path = fi.absoluteFilePath().toUtf8();
+    const char* pathUtf8 = utf8Path.constData();
+    llama_model_params modelParams = llama_model_default_params();
+    mLLMModel = llama_model_load_from_file(pathUtf8, modelParams);
+    mLLMHandle = mLLMModel != nullptr ? llama_init_from_model(mLLMModel, mLLMParams) : nullptr;
+    if (mLLMHandle == nullptr)
+    {
+        freeModel();
+        return String();
+    }
+
     return modelPath;
+}
+
+void AgentProcessor::freeModel()
+{
+    if (mLLMHandle != nullptr)
+    {
+        llama_free(mLLMHandle);
+        mLLMHandle = nullptr;
+    }
+    
+    if (mLLMModel != nullptr)
+    {
+        llama_model_free(mLLMModel);
+        mLLMModel = nullptr;
+    }
 }
