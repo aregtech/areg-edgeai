@@ -75,7 +75,7 @@ public:
     
 public:
     AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner);
-    virtual ~AgentProvider(void);
+    virtual ~AgentProvider(void) = default;
 
 //////////////////////////////////////////////////////////////////////////
 // MultiEdge Interface Requests

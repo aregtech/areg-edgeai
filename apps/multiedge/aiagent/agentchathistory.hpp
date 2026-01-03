@@ -86,9 +86,8 @@ public:
     
     void resetHistory(void);
     
-    QModelIndex createIndex(int row, int column, const void *data = nullptr) const;
-    QModelIndex createIndex(int row, int column, quintptr id) const;
-    
+    const QString& getRowMessage(int row) const;
+
 //////////////////////////////////////////////////////////////////////////
 // Overrides
 //////////////////////////////////////////////////////////////////////////

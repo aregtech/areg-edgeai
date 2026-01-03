@@ -79,16 +79,6 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
-           <widget class="QLineEdit" name="TxtTextLen"/>
-          </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>Max. Text Length:</string>
-            </property>
-           </widget>
-          </item>
           <item row="4" column="1">
            <widget class="QListWidget" name="ListModels">
             <property name="editTriggers">
@@ -197,14 +187,14 @@
               <item>
                <widget class="QRadioButton" name="BtnFast">
                 <property name="text">
-                 <string>Fast</string>
+                 <string>Creative</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QRadioButton" name="BtnFastest">
                 <property name="text">
-                 <string>The Fastest</string>
+                 <string>Permissive</string>
                 </property>
                </widget>
               </item>
@@ -244,29 +234,6 @@
              <string>Router IP Address:</string>
             </property>
            </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>Max. Tokens:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="1">
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Orientation::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="6" column="1">
-           <widget class="QLineEdit" name="TxtTokens"/>
           </item>
           <item row="3" column="1">
            <widget class="QLineEdit" name="TxtModelDir">
@@ -341,6 +308,42 @@
            <widget class="QPushButton" name="BtnBrowse">
             <property name="text">
              <string>Browse...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="widget_3" native="true">
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="TxtLength"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="TxtTokens"/>
+          </item>
+          <item row="0" column="5">
+           <widget class="QLineEdit" name="TxtCores"/>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Max. Cores:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Max. Text:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>Max. Tokens:</string>
             </property>
            </widget>
           </item>

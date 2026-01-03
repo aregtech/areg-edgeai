@@ -327,9 +327,8 @@ void EdgeDevice::onTableSelChanged(const QModelIndex &index)
     if (index.isValid() == false)
         return;
     
-    QModelIndex idx = mModel->createIndex(index.row(), static_cast<int>(AgentChatHistory::eChatColumn::ColumnMessage), index.internalId());
-    QVariant var = mModel->data(idx, Qt::DisplayRole);
-    ctrlDisplay()->setPlainText(var.toString());
+    const QString& msg = mModel->getRowMessage(index.row());
+    ctrlDisplay()->setPlainText(msg);
 }
 
 void EdgeDevice::disconnectAgent(void)

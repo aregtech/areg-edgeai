@@ -287,14 +287,13 @@ void AgentChatHistory::resetHistory(void)
     endResetModel();
 }
 
-QModelIndex AgentChatHistory::createIndex(int row, int column, const void *data) const
+const QString & AgentChatHistory::getRowMessage(int row) const
 {
-    return QAbstractTableModel::createIndex(row, column, data);
-}
+    if ((row < 0) || (row >= static_cast<int>(mHistory.size())))
+        return QString();
 
-QModelIndex AgentChatHistory::createIndex(int row, int column, quintptr id) const
-{
-    return QAbstractTableModel::createIndex(row, column, id);
+    const sChatEntry& entry = mHistory[row];
+    return entry.chatMessage;
 }
 
 int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)

@@ -81,10 +81,6 @@ AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentT
     ASSERT(mAIAgent != nullptr);
 }
 
-AgentProvider::~AgentProvider(void)
-{
-}
-
 void AgentProvider::startupServiceInterface(Component& holder)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProvider_startupServiceInterface);

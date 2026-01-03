@@ -277,10 +277,9 @@ void AIAgent::onTableSelChanged(const QModelIndex &index)
 {
     if (index.isValid() == false)
         return;
-    
-    QModelIndex idx = mModel->createIndex(index.row(), static_cast<int>(AgentChatHistory::eChatColumn::ColumnMessage), index.internalId());
-    QVariant var = mModel->data(idx, Qt::DisplayRole);
-    ctrlDisplay()->setPlainText(var.toString());
+
+    const QString& msg = mModel->getRowMessage(index.row());
+    ctrlDisplay()->setPlainText(msg);
 }
 
 void AIAgent::setupData(void)
@@ -369,9 +368,9 @@ void AIAgent::setupSignals(void)
     connect(ctrlTable()     , &QTableView::doubleClicked    , this , &AIAgent::onTableSelChanged);
     connect(ui->BtnBest     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.10f, 0.08f);});
     connect(ui->BtnBetter   , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.30f, 0.07f);});
-    connect(ui->BtnAverage  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.50f, 0.05);});
-    connect(ui->BtnFast     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.75f, 0.05);});
-    connect(ui->BtnFastest  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(1.00f, 0.03);});
+    connect(ui->BtnAverage  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.50f, 0.05f);});
+    connect(ui->BtnFast     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.75f, 0.05f);});
+    connect(ui->BtnFastest  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(1.00f, 0.03f);});
 }
 
 bool AIAgent::routerConnect(void)

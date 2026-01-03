@@ -102,16 +102,16 @@ AgentProcessor::AgentProcessor(void)
     , mCompThread           (nullptr)
     , mSessionId            (0xFFFFFFFF)
     , mModelParams          (llama_model_default_params())
-    , mTextLimit            (MAX_TOKENS * 2)
+    , mTextLimit            (MAX_CHARS)
     , mTokenLimit           (MAX_TOKENS)
     , mThreads              (1u)
     , mTemperature          (DEF_TEMPERATURE)
     , mProbability          (DEF_PROBABILITY)
     , mLLMModel             (nullptr)
 {
-    mModelParams.n_gpu_layers = 99;
     uint32_t cores = std::thread::hardware_concurrency();
     mThreads = std::clamp(cores, MIN_THREADS, MAX_THREADS);
+    mModelParams.n_gpu_layers = 99;
 }
 
 void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentThread& masterThread)
@@ -237,14 +237,17 @@ String AgentProcessor::processText(const String& prompt)
 
     // Generation loop
     response.reserve(MAX_CHARS);
-
     llama_token token;
     char buf[256];
-    for (int i = 0; i < MAX_TOKENS; ++i)
+    std::string pieces;
+    pieces.reserve(256);
+    for (int i = 0; i < mTokenLimit; ++i)
     {
         token = llama_sampler_sample(smpl, ctx, -1);
         if (llama_vocab_is_eog(vocab, token))
         {
+            LOG_INFO("Adding last piece [ %s ]", pieces.c_str());
+            response += pieces;
             LOG_DBG("End of generation token reached, interrupting text processing.");
             break;
         }
@@ -256,18 +259,24 @@ String AgentProcessor::processText(const String& prompt)
             break;
         }
 
-        String res(buf, n);
-        LOG_INFO("Converted token to piece, token [ %d ] -> [ %s ]", token, res.getString());
-        response += res;
-        if (response.getLength() > MAX_CHARS)
+        pieces.append(buf, n);
+        if (pieces.size() >= 256)
         {
-            LOG_WARN("Maximum character limit reached, interrupting text processing.");
-            break;
+            LOG_INFO("Appending pieces: [ %s ]", pieces.c_str());
+            response += pieces;
+            pieces.clear();
+            pieces.reserve(256);
+            if (response.getLength() >= mTextLimit)
+            {
+                LOG_WARN("Maximum character limit reached, interrupting text processing.");
+                break;
+            }
         }
 
         batch = llama_batch_get_one(&token, 1);
         if (llama_decode(ctx, batch) != 0)
         {
+            response += pieces;
             LOG_ERR("Failed to decode token");
             break;
         }
