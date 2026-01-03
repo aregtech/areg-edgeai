@@ -29,6 +29,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QListWidgetItem>
+#include <QString>
 #include <any>
 
 BEGIN_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
@@ -187,6 +188,11 @@ inline QLineEdit* AIAgent::ctrlActiveModel(void) const
     return ui->TxtActiveModel;
 }
 
+inline QPlainTextEdit* AIAgent::ctrlDisplay(void) const
+{
+    return ui->TxtDisplay;
+}
+
 void AIAgent::onActivateClicked(bool clicked)
 {
     QListWidget* listModels = ctrlModels();
@@ -253,9 +259,27 @@ void AIAgent::onModelsDoubleClicked(QListWidgetItem *item)
 void AIAgent::onModelsRowChanged(int currentRow)
 {
     Q_ASSERT(ctrlModels() != nullptr);
-    QListWidgetItem * item = (currentRow >= 0) && ((currentRow >= ctrlModels()->count())) ? ctrlModels()->item(currentRow) : nullptr;
+    int rows = ctrlModels()->count();
+    QListWidgetItem * item { nullptr };
+    if (currentRow >= 0)
+    {
+        if (currentRow < rows)
+        {
+            item = ctrlModels()->item(currentRow);
+        }
+    }
+    
     QString modelName = item != nullptr ? item->text() : "";
     ctrlActivate()->setEnabled(modelName.isEmpty() == false);
+}
+
+void AIAgent::onTableSelChanged(const QModelIndex &index)
+{
+    if (index.isValid() == false)
+        return;
+
+    const QString& msg = mModel->getRowMessage(index.row());
+    ctrlDisplay()->setPlainText(msg);
 }
 
 void AIAgent::setupData(void)
@@ -327,7 +351,8 @@ void AIAgent::setupWidgets(void)
     {
         ctrlConnect()->setEnabled(false);
     }
-        
+    
+    ui->BtnBest->setChecked(true);
     ctrlTab()->setCurrentIndex(0);
 }
 
@@ -339,6 +364,13 @@ void AIAgent::setupSignals(void)
     connect(ctrlBrowse()    , &QPushButton::clicked, this, &AIAgent::onModelLocationClicked);
     connect(ctrlModels()    , &QListWidget::itemDoubleClicked, this, &AIAgent::onModelsDoubleClicked);
     connect(ctrlModels()    , &QListWidget::currentRowChanged, this, &AIAgent::onModelsRowChanged);
+    connect(ctrlTable()     , &QTableView::activated        , this , &AIAgent::onTableSelChanged);
+    connect(ctrlTable()     , &QTableView::doubleClicked    , this , &AIAgent::onTableSelChanged);
+    connect(ui->BtnBest     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.10f, 0.08f);});
+    connect(ui->BtnBetter   , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.30f, 0.07f);});
+    connect(ui->BtnAverage  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.50f, 0.05f);});
+    connect(ui->BtnFast     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.75f, 0.05f);});
+    connect(ui->BtnFastest  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(1.00f, 0.03f);});
 }
 
 bool AIAgent::routerConnect(void)
@@ -431,4 +463,46 @@ QStringList AIAgent::scanTextLlamaModels(const QString& modelPath)
         // Return file names only, e.g. "model.gguf"
         return dir.entryList(QStringList{ QString::fromUtf8("*.gguf") }, QDir::Files, QDir::Name | QDir::IgnoreCase);
     }
+}
+
+void AIAgent::setTemperature(float newTemp, float newMinP)
+{
+    AgentProvider::setTemperature(newTemp, newMinP);
+}
+
+float AIAgent::getTemperature(void) const
+{
+    if (ui->BtnBest->isChecked())
+        return 0.10f;
+    else if (ui->BtnBetter->isChecked())
+        return 0.30f;
+    else if (ui->BtnAverage->isChecked())
+        return 0.50f;
+    else if (ui->BtnFast->isChecked())
+        return 0.75f;
+    else if (ui->BtnFastest->isChecked())
+        return 1.00f;
+
+    return 0.50f;
+}
+
+float AIAgent::getProbability(void) const
+{
+    if (ui->BtnBest->isChecked())
+        return 0.08f;
+    else if (ui->BtnBetter->isChecked())
+        return 0.07f;
+    else if (ui->BtnAverage->isChecked())
+        return 0.05f;
+    else if (ui->BtnFast->isChecked())
+        return 0.05f;
+    else if (ui->BtnFastest->isChecked())
+        return 0.03f;
+
+    return 0.05f;
+}
+
+void AIAgent::disconnectAgent(void)
+{
+    routerDisconnect();
 }

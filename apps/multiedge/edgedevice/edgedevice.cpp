@@ -46,7 +46,18 @@ EdgeDevice::~EdgeDevice()
 
 void EdgeDevice::slotActiveModelChanged(const QString modelName)
 {
-    ctrlActiveModel()->setText(modelName);
+    if (modelName.isEmpty() == false)
+    {
+        ctrlQuestion()->setEnabled(true);
+        ctrlQuestion()->setFocus();
+        ctrlDisplay()->setPlainText(QString());
+        ctrlActiveModel()->setText(modelName);
+    }
+    else
+    {
+        ctrlQuestion()->setEnabled(false);
+        ctrlActiveModel()->setText("N/A");
+    }
 }
 
 
@@ -93,12 +104,11 @@ void EdgeDevice::slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEServ
 
 void EdgeDevice::slotServiceAvailable(bool isConnected)
 {
-    ctrlQuestion()->setEnabled(isConnected);
+    ctrlQuestion()->setEnabled(false);
     ctrlSend()->setEnabled(isConnected);
     if (isConnected)
     {
         ctrlTab()->setCurrentIndex(1);
-        ctrlQuestion()->setFocus();
         mModel->resetHistory();
     }
 }
@@ -163,6 +173,11 @@ inline QLineEdit* EdgeDevice::ctrlActiveModel(void) const
     return ui->TxtActiveModel;
 }
 
+inline QPlainTextEdit* EdgeDevice::ctrlDisplay(void) const
+{
+    return ui->TxtDisplay;
+}
+
 void EdgeDevice::setupData(void)
 {
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
@@ -225,6 +240,8 @@ void EdgeDevice::setupSignals(void)
     connect(ctrlClose()  , &QPushButton::clicked, this, [this](bool checked) {routerDisconnect(); close(); });
     connect(ctrlConnect(), &QPushButton::clicked, this, &EdgeDevice::onConnectClicked);
     connect(ctrlSend()   , &QPushButton::clicked, this, &EdgeDevice::onSendQuestion);
+    connect(ctrlTable()  , &QTableView::activated    , this, &EdgeDevice::onTableSelChanged);
+    connect(ctrlTable()  , &QTableView::doubleClicked, this, &EdgeDevice::onTableSelChanged);
 }
 
 bool EdgeDevice::routerConnect(void)
@@ -263,6 +280,7 @@ void EdgeDevice::onConnectClicked(bool checked)
     {
         if (routerConnect())
         {
+            ctrlDisplay()->setPlainText("Initializing...");
             ctrlAddress()->setEnabled(false);
             ctrlPort()->setEnabled(false);
             ctrlName()->setEnabled(false);
@@ -301,4 +319,19 @@ void EdgeDevice::onSendQuestion(bool checked)
     }
 
     ctrlQuestion()->setPlainText(QString());
+    ctrlQuestion()->setFocus();
+}
+
+void EdgeDevice::onTableSelChanged(const QModelIndex &index)
+{
+    if (index.isValid() == false)
+        return;
+    
+    const QString& msg = mModel->getRowMessage(index.row());
+    ctrlDisplay()->setPlainText(msg);
+}
+
+void EdgeDevice::disconnectAgent(void)
+{
+    routerDisconnect();
 }

@@ -28,9 +28,9 @@ namespace {
     const QString _columns[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
           "Source"
-        , "Message"
-        , "Timestamp"
         , "Status"
+        , "Timestamp"
+        , "Message"
     };
 
     const QString _source[]
@@ -54,9 +54,9 @@ namespace {
     constexpr int _widths[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
           50
-        , 250
-        , 100
         , 50
+        , 100
+        , 250
     };
 
 }
@@ -282,8 +282,18 @@ void AgentChatHistory::resetHistory(void)
 {
     beginResetModel();
     mHistory.clear();
-    mHistory.reserve(INIT_LENGTH);    
+    mHistory.reserve(INIT_LENGTH);
+    mSequence = 0u;
     endResetModel();
+}
+
+const QString & AgentChatHistory::getRowMessage(int row) const
+{
+    if ((row < 0) || (row >= static_cast<int>(mHistory.size())))
+        return QString();
+
+    const sChatEntry& entry = mHistory[row];
+    return entry.chatMessage;
 }
 
 int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)

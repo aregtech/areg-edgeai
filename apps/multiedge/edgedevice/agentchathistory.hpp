@@ -33,10 +33,10 @@ public:
     {
           ColumnInvalid     = -1
         , ColumnSource      = 0
-        , ColumnMessage     = 1
-        , ColumnTimestamp   = 2
-        , ColumnStatus      = 3
-        , ColumnCount       = 4
+        , ColumnStatus
+        , ColumnTimestamp
+        , ColumnMessage
+        , ColumnCount
     };
     
     enum eChatSource
@@ -85,6 +85,8 @@ public:
 
     void resetHistory(void);
 
+    const QString & getRowMessage(int row) const;
+    
 //////////////////////////////////////////////////////////////////////////
 // Overrides
 //////////////////////////////////////////////////////////////////////////

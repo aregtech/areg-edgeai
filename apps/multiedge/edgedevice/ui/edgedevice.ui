@@ -35,7 +35,7 @@
       <enum>Qt::FocusPolicy::WheelFocus</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="WndConnect">
       <property name="sizePolicy">
@@ -295,6 +295,22 @@
                </attribute>
               </widget>
              </item>
+             <item>
+              <widget class="QPlainTextEdit" name="TxtDisplay">
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>90</height>
+                </size>
+               </property>
+               <property name="lineWrapMode">
+                <enum>QPlainTextEdit::LineWrapMode::WidgetWidth</enum>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -327,6 +343,12 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>60</height>
+                </size>
                </property>
                <property name="sizeAdjustPolicy">
                 <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>

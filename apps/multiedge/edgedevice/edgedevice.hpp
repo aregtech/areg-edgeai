@@ -45,6 +45,8 @@ class EdgeDevice : public QDialog
 public:
     EdgeDevice(QWidget *parent = nullptr);
     ~EdgeDevice();
+
+    void disconnectAgent(void);
     
 public slots:
     
@@ -76,12 +78,15 @@ private:
     inline QPushButton* ctrlClose(void) const;
     inline QTabWidget* ctrlTab(void) const;
     inline QLineEdit* ctrlActiveModel(void) const;
+    inline QPlainTextEdit* ctrlDisplay(void) const;
     
 private slots:
     
     void onConnectClicked(bool checked);
     
     void onSendQuestion(bool checked);
+    
+    void onTableSelChanged(const QModelIndex &index);
     
 private:
     void setupData(void);

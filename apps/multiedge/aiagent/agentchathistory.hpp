@@ -33,9 +33,9 @@ public:
     {
           ColumnInvalid     = -1
         , ColumnSource      = 0
-        , ColumnMessage
-        , ColumnTimestamp
         , ColumnStatus
+        , ColumnTimestamp
+        , ColumnMessage
         , ColumnCount
     };
     
@@ -86,6 +86,8 @@ public:
     
     void resetHistory(void);
     
+    const QString& getRowMessage(int row) const;
+
 //////////////////////////////////////////////////////////////////////////
 // Overrides
 //////////////////////////////////////////////////////////////////////////

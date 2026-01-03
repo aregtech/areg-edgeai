@@ -41,11 +41,13 @@ public:
         , ActionReplyVideo
         , ActionActivateModel
         , ActionModelActivated
+        , ActionTemperature
     };
 
 public:
     AgentProcessorEventData(void);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, const String& modelPath);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature, float probability);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
     AgentProcessorEventData(const AgentProcessorEventData& data);
@@ -58,23 +60,16 @@ public:
     AgentProcessorEventData& operator = (AgentProcessorEventData&& data) noexcept;
 
     inline AgentProcessorEventData::eAction getAction(void) const;
-
-    inline const String& getPrompt(void) const;
-
-    inline const SharedBuffer& getVideo(void) const;
-
-    inline uint32_t getSessionId(void) const;
     
-    inline const String& getModelPath(void) const;
+    inline SharedBuffer & getData(void);
+
+    inline const SharedBuffer& getData(void) const;
 
     inline void reset(void);
 
 private:
-    eAction         mAction;  
-    uint32_t        mSessionId;
-    String          mPrompt;
-    String          mModelPath;
-    SharedBuffer    mVideo;
+    eAction         mAction;
+    SharedBuffer    mData;
 };
 
 DECLARE_EVENT(AgentProcessorEventData, AgentProcessorEvent, IEAgentProcessorEventConsumer);
@@ -82,6 +77,14 @@ DECLARE_EVENT(AgentProcessorEventData, AgentProcessorEvent, IEAgentProcessorEven
 class AgentProcessor    : public IEWorkerThreadConsumer
                         , public IEAgentProcessorEventConsumer
 {
+private:
+    static constexpr uint32_t MAX_CHARS         { 1024u };
+    static constexpr uint32_t MAX_TOKENS        { 128u  };
+    static constexpr uint32_t MAX_THREADS       { 16u   };
+    static constexpr uint32_t MIN_THREADS       { 2u    };
+    static constexpr float    DEF_TEMPERATURE   { 0.10f };
+    static constexpr float    DEF_PROBABILITY   { 0.08f };
+
 public:
     AgentProcessor(void);
     virtual ~AgentProcessor(void) = default;
@@ -135,18 +138,21 @@ private:
     
     //!< Releases the currently active LLM model and associated context.
     void freeModel();
-
+    
     inline AgentProcessor& self();
     
 private:
     ComponentThread*        mCompThread;
-    AgentProcessorEventData mCurEvent;
+    uint32_t                mSessionId;
+    uint32_t                mUserId;
     String                  mModelPath;
-    llama_context_params    mLLMParams;
+    llama_model_params      mModelParams;
     uint32_t                mTextLimit;
     uint32_t                mTokenLimit;
+    uint32_t                mThreads;
+    float                   mTemperature;
+    float                   mProbability;
     llama_model*            mLLMModel;
-    llama_context*          mLLMHandle;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -158,32 +164,20 @@ inline AgentProcessorEventData::eAction AgentProcessorEventData::getAction(void)
     return mAction;
 }
 
-inline const String& AgentProcessorEventData::getPrompt(void) const
+inline SharedBuffer& AgentProcessorEventData::getData(void)
 {
-    return mPrompt;
+    return mData;
 }
 
-inline const SharedBuffer& AgentProcessorEventData::getVideo(void) const
+inline const SharedBuffer& AgentProcessorEventData::getData(void) const
 {
-    return mVideo;
-}
-
-inline uint32_t AgentProcessorEventData::getSessionId(void) const
-{
-    return mSessionId;
-}
-
-inline const String& AgentProcessorEventData::getModelPath(void) const
-{
-    return mModelPath;
+    return mData;
 }
 
 inline void AgentProcessorEventData::reset(void)
 {
     mAction = ActionUnknown;
-    mSessionId = 0;
-    mPrompt.clear();
-    mVideo.invalidate();
+    mData.invalidate();
 }
 
 #endif // MULTIEDGE_AIAGENT_AGENTPROCESSOR_HPP
