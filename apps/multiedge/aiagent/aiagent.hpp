@@ -49,6 +49,12 @@ public:
     ~AIAgent();
     
     inline QString getActiveModelPath(void) const;
+
+    float getTemperature(void) const;
+
+    float getProbability(void) const;
+
+    void disconnectAgent(void);
     
 public slots:
     
@@ -110,7 +116,7 @@ private:
     
     void routerDisconnect(void);
     
-    void setTemperature(float newValue);
+    void setTemperature(float newTemp, float newMinP);
     
     QStringList scanTextLlamaModels(const QString& modelPath);
 

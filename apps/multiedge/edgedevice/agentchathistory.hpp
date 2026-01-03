@@ -33,10 +33,10 @@ public:
     {
           ColumnInvalid     = -1
         , ColumnSource      = 0
-        , ColumnMessage     = 1
-        , ColumnTimestamp   = 2
-        , ColumnStatus      = 3
-        , ColumnCount       = 4
+        , ColumnStatus
+        , ColumnTimestamp
+        , ColumnMessage
+        , ColumnCount
     };
     
     enum eChatSource
@@ -84,7 +84,10 @@ public:
     void addFailure(const QString& text);
 
     void resetHistory(void);
-
+    
+    QModelIndex createIndex(int row, int column, const void *data = nullptr) const;
+    QModelIndex createIndex(int row, int column, quintptr id) const;
+    
 //////////////////////////////////////////////////////////////////////////
 // Overrides
 //////////////////////////////////////////////////////////////////////////

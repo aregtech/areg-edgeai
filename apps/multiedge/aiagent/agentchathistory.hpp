@@ -33,9 +33,9 @@ public:
     {
           ColumnInvalid     = -1
         , ColumnSource      = 0
-        , ColumnMessage
-        , ColumnTimestamp
         , ColumnStatus
+        , ColumnTimestamp
+        , ColumnMessage
         , ColumnCount
     };
     
@@ -85,6 +85,9 @@ public:
     void addFailure(const QString& text);
     
     void resetHistory(void);
+    
+    QModelIndex createIndex(int row, int column, const void *data = nullptr) const;
+    QModelIndex createIndex(int row, int column, quintptr id) const;
     
 //////////////////////////////////////////////////////////////////////////
 // Overrides

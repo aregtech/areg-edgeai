@@ -45,6 +45,8 @@ class EdgeDevice : public QDialog
 public:
     EdgeDevice(QWidget *parent = nullptr);
     ~EdgeDevice();
+
+    void disconnectAgent(void);
     
 public slots:
     

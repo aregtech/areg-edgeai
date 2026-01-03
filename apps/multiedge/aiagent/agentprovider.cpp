@@ -43,17 +43,25 @@ void AgentProvider::activateModel(const QString & modelPath)
     AgentProvider* service = getService();
     if ((service != nullptr) && (service->mWorkerThread != nullptr) && (modelPath.isEmpty() == false))
     {
+        ASSERT(service->mAIAgent != nullptr);
         String model(modelPath.toStdString());
-        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model), *(service->mWorkerThread));
+        float temperature = service->mAIAgent->getTemperature();
+        float probability = service->mAIAgent->getProbability();
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model)
+                                        , *(service->mWorkerThread)
+                                        , Event::eEventPriority::EventPriorityHigh);
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionTemperature, temperature, probability)
+                                        , *(service->mWorkerThread)
+                                        , Event::eEventPriority::EventPriorityHigh);
     }
 }
 
-void AgentProvider::setTemperature(float newValue)
+void AgentProvider::setTemperature(float newTemp, float newMinP)
 {
     AgentProvider* service = getService();
     if ((service != nullptr) && (service->mWorkerThread != nullptr))
     {
-        AgentProcessorEvent::sendEvent( AgentProcessorEventData(AgentProcessorEventData::eAction::ActionTemperature, newValue)
+        AgentProcessorEvent::sendEvent( AgentProcessorEventData(AgentProcessorEventData::eAction::ActionTemperature, newTemp, newMinP)
                                       , *(service->mWorkerThread)
                                       , Event::eEventPriority::EventPriorityHigh);
     }
@@ -71,6 +79,10 @@ AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentT
     , mAgentProcessor()
 {
     ASSERT(mAIAgent != nullptr);
+}
+
+AgentProvider::~AgentProvider(void)
+{
 }
 
 void AgentProvider::startupServiceInterface(Component& holder)

@@ -63,15 +63,19 @@ public:
     /**
      * \brief   Activates or switches the AI model used by the agent service.
      * \param   modelPath   File system path or identifier of the model to activate.
-     * \note    This is a static helper to configure the model before or during service usage.
      **/
     static void activateModel(const QString & modelPath);
 
-    static void setTemperature(float newValue);
+    /**
+     * \brief   Sets the temperature parameter for the AI model.
+     * \param   newTemp     The new temperature value to set.
+     * \param   newMinP     The new minimum probability value to set.
+     **/
+    static void setTemperature(float newTemp, float newMinP);
     
 public:
     AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner);
-    virtual ~AgentProvider(void) = default;
+    virtual ~AgentProvider(void);
 
 //////////////////////////////////////////////////////////////////////////
 // MultiEdge Interface Requests

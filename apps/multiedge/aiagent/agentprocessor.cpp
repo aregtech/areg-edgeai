@@ -37,11 +37,12 @@ AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eActio
     mData << modelPath;
 }
 
-AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature)
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature, float probability)
     : mAction   (action)
     , mData     ()
 {
     mData << temperature;
+    mData << probability;
 }
 
 AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt)
@@ -105,6 +106,7 @@ AgentProcessor::AgentProcessor(void)
     , mTokenLimit           (MAX_TOKENS)
     , mThreads              (1u)
     , mTemperature          (DEF_TEMPERATURE)
+    , mProbability          (DEF_PROBABILITY)
     , mLLMModel             (nullptr)
 {
     mModelParams.n_gpu_layers = 99;
@@ -157,8 +159,11 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
     {
         const SharedBuffer& evData = data.getData();
         float temperature = 0.5f;
+        float probability = 0.05f;
         evData >> temperature;
-        mTemperature = std::clamp(temperature, 0.0f, 1.0f);
+        evData >> probability;
+        mTemperature = std::clamp(temperature, 0.09f, 1.2f);
+        mProbability = std::clamp(probability, 0.01f, 0.2f);
     }
     break;
 
@@ -196,7 +201,7 @@ String AgentProcessor::processText(const String& prompt)
 
     // create sampler
     llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
-    llama_sampler_chain_add(smpl, llama_sampler_init_min_p(0.05f, 1));
+    llama_sampler_chain_add(smpl, llama_sampler_init_min_p(mProbability, 1));
     llama_sampler_chain_add(smpl, llama_sampler_init_temp(mTemperature));
     llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 

@@ -28,9 +28,9 @@ namespace {
     const QString _columns[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
           "Source"
-        , "Message"
-        , "Timestamp"
         , "Status"
+        , "Timestamp"
+        , "Message"
     };
 
     const QString _source[]
@@ -54,9 +54,9 @@ namespace {
     constexpr int _widths[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
           50
-        , 250
-        , 100
         , 50
+        , 100
+        , 250
     };
 
 }
@@ -285,6 +285,16 @@ void AgentChatHistory::resetHistory(void)
     mHistory.reserve(INIT_LENGTH);
     mSequence = 0u;
     endResetModel();
+}
+
+QModelIndex AgentChatHistory::createIndex(int row, int column, const void *data) const
+{
+    return QAbstractTableModel::createIndex(row, column, data);
+}
+
+QModelIndex AgentChatHistory::createIndex(int row, int column, quintptr id) const
+{
+    return QAbstractTableModel::createIndex(row, column, id);
 }
 
 int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)

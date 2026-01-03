@@ -47,7 +47,7 @@ public:
 public:
     AgentProcessorEventData(void);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, const String& modelPath);
-    AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature, float probability);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
     AgentProcessorEventData(const AgentProcessorEventData& data);
@@ -78,11 +78,12 @@ class AgentProcessor    : public IEWorkerThreadConsumer
                         , public IEAgentProcessorEventConsumer
 {
 private:
-    static constexpr uint32_t MAX_CHARS         { 2048u };
-    static constexpr uint32_t MAX_TOKENS        { 512u  };
-    static constexpr uint32_t MAX_THREADS       { 12u   };
+    static constexpr uint32_t MAX_CHARS         { 1024u };
+    static constexpr uint32_t MAX_TOKENS        { 128u  };
+    static constexpr uint32_t MAX_THREADS       { 16u   };
     static constexpr uint32_t MIN_THREADS       { 2u    };
-    static constexpr float    DEF_TEMPERATURE   { 0.1f  };
+    static constexpr float    DEF_TEMPERATURE   { 0.10f };
+    static constexpr float    DEF_PROBABILITY   { 0.08f };
 
 public:
     AgentProcessor(void);
@@ -150,6 +151,7 @@ private:
     uint32_t                mTokenLimit;
     uint32_t                mThreads;
     float                   mTemperature;
+    float                   mProbability;
     llama_model*            mLLMModel;
 };
 

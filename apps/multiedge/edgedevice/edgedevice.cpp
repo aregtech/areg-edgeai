@@ -327,6 +327,12 @@ void EdgeDevice::onTableSelChanged(const QModelIndex &index)
     if (index.isValid() == false)
         return;
     
-    QVariant var = mModel->data(index, Qt::DisplayRole);
+    QModelIndex idx = mModel->createIndex(index.row(), static_cast<int>(AgentChatHistory::eChatColumn::ColumnMessage), index.internalId());
+    QVariant var = mModel->data(idx, Qt::DisplayRole);
     ctrlDisplay()->setPlainText(var.toString());
+}
+
+void EdgeDevice::disconnectAgent(void)
+{
+    routerDisconnect();
 }
