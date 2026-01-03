@@ -24,7 +24,7 @@
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
-
+#include "llama.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +43,8 @@ int main(int argc, char *argv[])
     }
 
     Application::initApplication(true, true, false);
+    // Load backends once per process.    
+    ggml_backend_load_all();
 
     a.setApplicationName("Edge AI Agent");
     AIAgent w;

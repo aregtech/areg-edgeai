@@ -18,6 +18,7 @@
 #include "areg/component/WorkerThread.hpp"
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "areg/component/ComponentThread.hpp"
+#include "areg/logging/GELog.h"
 
 #include <QFileInfo>
 #include <algorithm>
@@ -25,55 +26,50 @@
 
 AgentProcessorEventData::AgentProcessorEventData(void)
     : mAction   (ActionUnknown)
-    , mSessionId(0)
-    , mPrompt   ( )
-    , mModelPath( )
-    , mVideo    ( )
+    , mData     ()
 {
 }
 
 AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, const String& modelPath)
     : mAction   (action)
-    , mSessionId(0xFFFFFFFFu)
-    , mPrompt   ( )
-    , mModelPath(modelPath)
-    , mVideo    ( )
+    , mData     ()
 {
+    mData << modelPath;
 }
-    
+
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature)
+    : mAction   (action)
+    , mData     ()
+{
+    mData << temperature;
+}
+
 AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt)
     : mAction   (action)
-    , mSessionId(sessionId)
-    , mPrompt   (prompt)
-    , mModelPath( )
-    , mVideo    ( )
+    , mData     ()
 {
+    mData << sessionId;
+    mData << prompt;
 }
 
 AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video)
     : mAction   (action)
-    , mSessionId(sessionId)
-    , mPrompt   (prompt)
-    , mModelPath( )
-    , mVideo    (video)
+    , mData     ()
 {
+    mData << sessionId;
+    mData << prompt;
+    mData << video;
 }
 
 AgentProcessorEventData::AgentProcessorEventData(const AgentProcessorEventData& data)
     : mAction   (data.mAction)
-    , mSessionId(data.mSessionId)
-    , mPrompt   (data.mPrompt)
-    , mModelPath(data.mModelPath)
-    , mVideo    (data.mVideo)
+    , mData     (data.mData)
 {
 }
 
 AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData&& data) noexcept
     : mAction   (data.mAction)
-    , mSessionId(data.mSessionId)
-    , mPrompt   (std::move(data.mPrompt))
-    , mModelPath(std::move(data.mModelPath))
-    , mVideo    (std::move(data.mVideo))
+    , mData     (std::move(data.mData))
 {
 }
 
@@ -81,11 +77,8 @@ AgentProcessorEventData& AgentProcessorEventData::operator = (const AgentProcess
 {
     if (this != &data)
     {
-        mAction     = data.mAction;
-        mSessionId  = data.mSessionId;
-        mPrompt     = data.mPrompt;
-        mModelPath  = data.mModelPath;
-        mVideo      = data.mVideo;
+        mAction = data.mAction;
+        mData   = data.mData;
     }
 
     return (*this);
@@ -95,11 +88,8 @@ AgentProcessorEventData& AgentProcessorEventData::operator = (AgentProcessorEven
 {
     if (this != &data)
     {
-        mAction     = data.mAction;
-        mSessionId  = data.mSessionId;
-        mPrompt     = std::move(data.mPrompt);
-        mModelPath  = std::move(data.mModelPath);
-        mVideo      = std::move(data.mVideo);
+        mAction = data.mAction;
+        mData   = std::move(data.mData);
     }
 
     return (*this);
@@ -109,15 +99,17 @@ AgentProcessor::AgentProcessor(void)
     : IEWorkerThreadConsumer(NEMultiEdgeSettings::CONSUMER_NAME)
     , IEAgentProcessorEventConsumer( )
     , mCompThread           (nullptr)
-    , mCurEvent             ( )
-    , mLLMParams            (llama_context_default_params())
-    , mTextLimit            (512)
-    , mTokenLimit           (2048)
+    , mSessionId            (0xFFFFFFFF)
+    , mModelParams          (llama_model_default_params())
+    , mTextLimit            (MAX_TOKENS * 2)
+    , mTokenLimit           (MAX_TOKENS)
+    , mThreads              (1u)
+    , mTemperature          (DEF_TEMPERATURE)
     , mLLMModel             (nullptr)
-    , mLLMHandle            (nullptr)
 {
-    mLLMParams.n_ctx = 2048;   // safe default, tune later
-    mLLMParams.n_threads = std::max(1u, std::thread::hardware_concurrency());
+    mModelParams.n_gpu_layers = 99;
+    uint32_t cores = std::thread::hardware_concurrency();
+    mThreads = std::clamp(cores, MIN_THREADS, MAX_THREADS);
 }
 
 void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentThread& masterThread)
@@ -128,9 +120,9 @@ void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentT
 
 void AgentProcessor::unregisterEventConsumers(WorkerThread& workThread)
 {
-    freeModel();
     mCompThread = nullptr;
     AgentProcessorEvent::removeListener(static_cast<IEAgentProcessorEventConsumer&>(*this), static_cast<DispatcherThread&>(workThread));
+    freeModel();
 }
 
 void AgentProcessor::processEvent(const AgentProcessorEventData& data)
@@ -138,61 +130,190 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
     if (mCompThread == nullptr)
         return;
 
-    if (data.getAction() == AgentProcessorEventData::ActionProcessText)
+    switch (data.getAction())
     {
-        mCurEvent = data;
-        String response = processText(data.getPrompt());
-        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionReplyText, data.getSessionId(), response), static_cast<DispatcherThread &>(*mCompThread));
+    case AgentProcessorEventData::ActionProcessText:
+    {
+        const SharedBuffer& evData = data.getData();
+        String prompt;
+        evData >> mSessionId;
+        evData >> prompt;
+        String response = processText(prompt);
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionReplyText, mSessionId, response), static_cast<DispatcherThread&>(*mCompThread));
     }
-    else if (data.getAction() == AgentProcessorEventData::ActionActivateModel)
+    break;
+
+    case AgentProcessorEventData::ActionActivateModel:
     {
-        mModelPath = activateModel(data.getModelPath());
-        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionModelActivated, mModelPath), static_cast<DispatcherThread &>(*mCompThread));
+        const SharedBuffer& evData = data.getData();
+        String modelPath;
+        evData >> modelPath;
+        mModelPath = activateModel(modelPath);
+        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionModelActivated, mModelPath), static_cast<DispatcherThread&>(*mCompThread));
+    }
+    break;
+
+    case AgentProcessorEventData::ActionTemperature:
+    {
+        const SharedBuffer& evData = data.getData();
+        float temperature = 0.5f;
+        evData >> temperature;
+        mTemperature = std::clamp(temperature, 0.0f, 1.0f);
+    }
+    break;
+
+    default:
+        break;
     }
 }
 
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
 String AgentProcessor::processText(const String& prompt)
 {
-    // TODO: implement text processing here
-    return String();
+    LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
+    if (prompt.isEmpty() || mLLMModel == nullptr)
+    {
+        LOG_ERR("The prompt is empty (len = %d) or LLM model is not activated (%s null), cannot process text...", prompt.getLength(), mLLMModel != nullptr ? "IS NOT" : "IS");
+        return String();
+    }
+
+    const llama_vocab* vocab = llama_model_get_vocab(mLLMModel);
+
+    // Create a fresh context per request
+    llama_context_params ctx_params = llama_context_default_params();
+    ctx_params.n_ctx    = mTextLimit;
+    ctx_params.n_batch  = mTokenLimit;
+    ctx_params.n_threads= mThreads;
+    ctx_params.no_perf  = true;
+
+    String response;
+    llama_context* ctx = llama_init_from_model(mLLMModel, ctx_params);
+    if (!ctx) 
+    {
+        LOG_ERR("Failed to create LLM context from model");
+        return response;
+    }
+
+    // create sampler
+    llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
+    llama_sampler_chain_add(smpl, llama_sampler_init_min_p(0.05f, 1));
+    llama_sampler_chain_add(smpl, llama_sampler_init_temp(mTemperature));
+    llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+
+    // Tokenize prompt
+    const bool add_bos = true;
+    const int n_prompt = -llama_tokenize(vocab, prompt.getString(), prompt.getLength(), nullptr, 0, add_bos, true);
+    if (n_prompt <= 0) 
+    {
+        LOG_ERR("Failed to tokenize prompt, returned value %d", n_prompt);
+        llama_sampler_free(smpl);
+        llama_free(ctx);
+        return response;
+    }
+
+    std::vector<llama_token> tokens(n_prompt);
+    if (llama_tokenize(vocab, prompt.getString(), prompt.getLength(), tokens.data(), tokens.size(), add_bos, true) < 0)
+    {
+        LOG_ERR("Failed to tokenize prompt, returned value %d", n_prompt);
+        llama_sampler_free(smpl);
+        llama_free(ctx);
+        return response;
+    }
+
+    // Decode prompt
+    llama_batch batch = llama_batch_get_one(tokens.data(), tokens.size());
+    if (llama_decode(ctx, batch) != 0)
+    {
+        LOG_ERR("Failed to decode prompt");
+        llama_sampler_free(smpl);
+        llama_free(ctx);
+        return response;
+    }
+
+    // Generation loop
+    response.reserve(MAX_CHARS);
+
+    llama_token token;
+    char buf[256];
+    for (int i = 0; i < MAX_TOKENS; ++i)
+    {
+        token = llama_sampler_sample(smpl, ctx, -1);
+        if (llama_vocab_is_eog(vocab, token))
+        {
+            LOG_DBG("End of generation token reached, interrupting text processing.");
+            break;
+        }
+
+        int n = llama_token_to_piece(vocab, token, buf, sizeof(buf), 0, true);
+        if (n <= 0)
+        {
+            LOG_ERR("Failed to convert token to piece, token %d, ret value [ %d ]", token, n);
+            break;
+        }
+
+        String res(buf, n);
+        LOG_INFO("Converted token to piece, token [ %d ] -> [ %s ]", token, res.getString());
+        response += res;
+        if (response.getLength() > MAX_CHARS)
+        {
+            LOG_WARN("Maximum character limit reached, interrupting text processing.");
+            break;
+        }
+
+        batch = llama_batch_get_one(&token, 1);
+        if (llama_decode(ctx, batch) != 0)
+        {
+            LOG_ERR("Failed to decode token");
+            break;
+        }
+    }
+
+    // Cleanup
+    llama_sampler_free(smpl);
+    llama_free(ctx);
+
+    return response;
 }
 
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
 String AgentProcessor::activateModel(const String& modelPath)
 {
+    LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
+    
     if (modelPath.isEmpty())
+    {
+        LOG_ERR("The model path is empty, cannot activate model...");
         return String();
+    }
 
     const QString qPath = QString::fromUtf8(modelPath.getString());
     QFileInfo fi(qPath);
     if (!fi.exists() || !fi.isFile())
-        return String();
-
-    // Cleanup previous model/context
-    freeModel();
-    
-    // Load model
-    const QByteArray utf8Path = fi.absoluteFilePath().toUtf8();
-    const char* pathUtf8 = utf8Path.constData();
-    llama_model_params modelParams = llama_model_default_params();
-    mLLMModel = llama_model_load_from_file(pathUtf8, modelParams);
-    mLLMHandle = mLLMModel != nullptr ? llama_init_from_model(mLLMModel, mLLMParams) : nullptr;
-    if (mLLMHandle == nullptr)
     {
-        freeModel();
+        LOG_ERR("The model file does not exist at path [%s], cannot active model...", modelPath.getString());
         return String();
     }
 
+    // Release previous model
+    freeModel();
+
+    const QByteArray utf8Path = fi.absoluteFilePath().toUtf8();
+    mLLMModel = llama_model_load_from_file(utf8Path.constData(), mModelParams);
+    if (mLLMModel == nullptr)
+    {
+        LOG_ERR("Failed to load LLM model from file [%s]", utf8Path.constData());
+        return String();
+    }
+
+    // Context is NOT created here on purpose
+    // Contexts are per-request to avoid topic mixing
+
+    LOG_DBG("Successfully activated LLM model from file [%s]", utf8Path.constData());
     return modelPath;
 }
 
 void AgentProcessor::freeModel()
 {
-    if (mLLMHandle != nullptr)
-    {
-        llama_free(mLLMHandle);
-        mLLMHandle = nullptr;
-    }
-    
     if (mLLMModel != nullptr)
     {
         llama_model_free(mLLMModel);

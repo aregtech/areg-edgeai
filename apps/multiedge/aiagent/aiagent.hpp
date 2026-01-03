@@ -35,6 +35,7 @@ class QPushButton;
 class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
+class QPlainTextEdit;
 class QTableView;
 class QTabWidget;
 class QWidget;
@@ -66,7 +67,7 @@ public slots:
     void slotVideoProcessed(uint32_t seqId, uint32_t id, SharedBuffer video);
     
     void slotAgentProcessingFailed(NEMultiEdge::eEdgeAgent agent, NEService::eResultType reason);
-
+    
 private:
 
     inline QWidget* wndConnect(void) const;
@@ -82,6 +83,7 @@ private:
     inline QLineEdit* ctrlLocation(void) const;
     inline QPushButton* ctrlBrowse(void) const;
     inline QLineEdit* ctrlActiveModel(void) const;
+    inline QPlainTextEdit* ctrlDisplay(void) const;
     
 private slots:
     
@@ -95,6 +97,8 @@ private slots:
     
     void onModelsRowChanged(int currentRow);
     
+    void onTableSelChanged(const QModelIndex &index);
+    
 private:
     void setupData(void);
     
@@ -105,6 +109,8 @@ private:
     bool routerConnect(void);
     
     void routerDisconnect(void);
+    
+    void setTemperature(float newValue);
     
     QStringList scanTextLlamaModels(const QString& modelPath);
 

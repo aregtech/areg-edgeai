@@ -48,6 +48,17 @@ void AgentProvider::activateModel(const QString & modelPath)
     }
 }
 
+void AgentProvider::setTemperature(float newValue)
+{
+    AgentProvider* service = getService();
+    if ((service != nullptr) && (service->mWorkerThread != nullptr))
+    {
+        AgentProcessorEvent::sendEvent( AgentProcessorEventData(AgentProcessorEventData::eAction::ActionTemperature, newValue)
+                                      , *(service->mWorkerThread)
+                                      , Event::eEventPriority::EventPriorityHigh);
+    }
+}
+
 AgentProvider::AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner)
     : QObject       (nullptr)
     , Component     (entry, owner)
@@ -147,21 +158,31 @@ void AgentProvider::notifyWorkerThreadStarted(IEWorkerThreadConsumer& /*consumer
 void AgentProvider::processEvent(const AgentProcessorEventData& data)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProvider_processEvent);
-    if (data.getAction() == AgentProcessorEventData::eAction::ActionReplyText)
+    switch (data.getAction())
+    {
+    case AgentProcessorEventData::eAction::ActionReplyText:
     {
         LOG_DBG("Processed text....");
+        const SharedBuffer& evData = data.getData();
+        String reply;
+        uint32_t sessionId;
+        evData >> sessionId;
+        evData >> reply;
+
         if (!mListSessions.empty())
         {
             const sTextPrompt& prompt = mListSessions.front();
-            emit signalTextProcessed(prompt.agentSession, prompt.agentId, QString::fromStdString(data.getPrompt().getData()), DateTime::getNow());
-            if (prepareResponse(prompt.sessionId))
+            ASSERT(sessionId == prompt.sessionId);
+
+            emit signalTextProcessed(prompt.agentSession, prompt.agentId, QString::fromStdString(reply.getData()), DateTime::getNow());
+            if (prepareResponse(sessionId))
             {
                 LOG_DBG("Prepared response, sending response to the Agent [ %u ], session [ %u ], response text length [ %u ]"
-                        , prompt.agentId
-                        , prompt.agentSession
-                        , data.getPrompt().getLength());
+                    , prompt.agentId
+                    , prompt.agentSession
+                    , reply.getLength());
 
-                responseProcessText(prompt.agentSession, prompt.agentId, data.getPrompt());
+                responseProcessText(prompt.agentSession, prompt.agentId, reply);
             }
             else
             {
@@ -175,9 +196,9 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
             {
                 const sTextPrompt& nextPrompt = mListSessions.front();
                 LOG_DBG("Processing next text prompt in the queue, Agent [ %u ], session [ %u ], current queue size [ %u ]"
-                            , nextPrompt.agentId
-                            , nextPrompt.agentSession
-                            , static_cast<uint32_t>(mListSessions.size()));
+                    , nextPrompt.agentId
+                    , nextPrompt.agentSession
+                    , static_cast<uint32_t>(mListSessions.size()));
 
                 ASSERT(mWorkerThread != nullptr);
                 ASSERT(mWorkerThread->isRunning());
@@ -190,9 +211,13 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
             }
         }
     }
-    else if (data.getAction() == AgentProcessorEventData::eAction::ActionModelActivated)
+    break;
+
+    case AgentProcessorEventData::eAction::ActionModelActivated:
     {
-        QString modelPath(QString::fromStdString(data.getModelPath().getData()));
+        String path;
+        data.getData() >> path;
+        QString modelPath(QString::fromStdString(path.getData()));
         if (modelPath.isEmpty() == false)
         {
             QFileInfo fi(modelPath);
@@ -200,6 +225,11 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
             setActiveModel(fileName.toStdString());
             emit signalActiveModelChanged(fileName);
         }
+    }
+    break;
+
+    default:
+        break;
     }
 }
 

@@ -282,7 +282,8 @@ void AgentChatHistory::resetHistory(void)
 {
     beginResetModel();
     mHistory.clear();
-    mHistory.reserve(INIT_LENGTH);    
+    mHistory.reserve(INIT_LENGTH);
+    mSequence = 0u;
     endResetModel();
 }
 

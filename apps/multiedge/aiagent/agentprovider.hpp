@@ -66,6 +66,8 @@ public:
      * \note    This is a static helper to configure the model before or during service usage.
      **/
     static void activateModel(const QString & modelPath);
+
+    static void setTemperature(float newValue);
     
 public:
     AgentProvider(const NERegistry::ComponentEntry& entry, ComponentThread& owner);

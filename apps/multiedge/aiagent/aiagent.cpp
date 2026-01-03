@@ -29,6 +29,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QListWidgetItem>
+#include <QString>
 #include <any>
 
 BEGIN_MODEL(NEMultiEdgeSettings::MODEL_PROVIDER.data())
@@ -187,6 +188,11 @@ inline QLineEdit* AIAgent::ctrlActiveModel(void) const
     return ui->TxtActiveModel;
 }
 
+inline QPlainTextEdit* AIAgent::ctrlDisplay(void) const
+{
+    return ui->TxtDisplay;
+}
+
 void AIAgent::onActivateClicked(bool clicked)
 {
     QListWidget* listModels = ctrlModels();
@@ -258,6 +264,15 @@ void AIAgent::onModelsRowChanged(int currentRow)
     ctrlActivate()->setEnabled(modelName.isEmpty() == false);
 }
 
+void AIAgent::onTableSelChanged(const QModelIndex &index)
+{
+    if (index.isValid() == false)
+        return;
+    
+    QVariant var = mModel->data(index, Qt::DisplayRole);
+    ctrlDisplay()->setPlainText(var.toString());
+}
+
 void AIAgent::setupData(void)
 {
     ConnectionConfiguration config(NERemoteService::eRemoteServices::ServiceRouter, NERemoteService::eConnectionTypes::ConnectTcpip);
@@ -327,7 +342,8 @@ void AIAgent::setupWidgets(void)
     {
         ctrlConnect()->setEnabled(false);
     }
-        
+    
+    ui->BtnBest->setChecked(true);
     ctrlTab()->setCurrentIndex(0);
 }
 
@@ -339,6 +355,13 @@ void AIAgent::setupSignals(void)
     connect(ctrlBrowse()    , &QPushButton::clicked, this, &AIAgent::onModelLocationClicked);
     connect(ctrlModels()    , &QListWidget::itemDoubleClicked, this, &AIAgent::onModelsDoubleClicked);
     connect(ctrlModels()    , &QListWidget::currentRowChanged, this, &AIAgent::onModelsRowChanged);
+    connect(ctrlTable()     , &QTableView::activated        , this , &AIAgent::onTableSelChanged);
+    connect(ctrlTable()     , &QTableView::doubleClicked    , this , &AIAgent::onTableSelChanged);
+    connect(ui->BtnBest     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.10f);});
+    connect(ui->BtnBetter   , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.30f);});
+    connect(ui->BtnAverage  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.50f);});
+    connect(ui->BtnFast     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.75f);});
+    connect(ui->BtnFastest  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(1.00f);});
 }
 
 bool AIAgent::routerConnect(void)
@@ -431,4 +454,9 @@ QStringList AIAgent::scanTextLlamaModels(const QString& modelPath)
         // Return file names only, e.g. "model.gguf"
         return dir.entryList(QStringList{ QString::fromUtf8("*.gguf") }, QDir::Files, QDir::Name | QDir::IgnoreCase);
     }
+}
+
+void AIAgent::setTemperature(float newValue)
+{
+    AgentProvider::setTemperature(newValue);
 }
