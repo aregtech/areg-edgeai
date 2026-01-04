@@ -47,7 +47,6 @@ AIAgent::AIAgent(QWidget *parent)
     , ui        (new Ui::AIAgent)
     , mAddress  (QString::fromStdString(NEMultiEdgeSettings::ROUTER_ADDRESS.data()))
     , mPort     (NEMultiEdgeSettings::ROUTER_PORT)
-    , mServiceStarted(false)
     , mModel    (nullptr)
     , mModelDir ( )
     , mAIModelName( )
@@ -67,7 +66,6 @@ AIAgent::~AIAgent()
 
 void AIAgent::slotServiceStarted(bool isStarted)
 {
-    mServiceStarted = isStarted;
 }
 
 void AIAgent::slotAgentQueueSize(uint32_t queueSize)
@@ -424,8 +422,7 @@ bool AIAgent::routerConnect(void)
 
 void AIAgent::routerDisconnect(void)
 {
-    Application::unloadModel(NEMultiEdgeSettings::MODEL_PROVIDER.data());
-    mServiceStarted = false;
+    Application::unloadModel(nullptr);
     Application::stopMessageRouting();
 }
 

@@ -113,6 +113,9 @@ AgentProcessorEventData& AgentProcessorEventData::operator = (AgentProcessorEven
 //////////////////////////////////////////////////////////////////////////
 // AgentProcessor class implementation
 //////////////////////////////////////////////////////////////////////////
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_processEvent);
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
+DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
 
 uint32_t AgentProcessor::optThreadCount(void)
 {
@@ -157,6 +160,7 @@ void AgentProcessor::unregisterEventConsumers(WorkerThread& workThread)
 
 void AgentProcessor::processEvent(const AgentProcessorEventData& data)
 {
+    LOG_SCOPE(multiedge_aiagent_AgentProcessor_processEvent);
     if (mCompThread == nullptr)
         return;
 
@@ -168,6 +172,7 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         String prompt;
         evData >> mSessionId;
         evData >> prompt;
+        LOG_DBG("Processing prompt [ %s ]", prompt.getString());
         String response = processText(prompt);
         AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionReplyText, mSessionId, response), static_cast<DispatcherThread&>(*mCompThread));
     }
@@ -178,6 +183,7 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         const SharedBuffer& evData = data.getData();
         String modelPath;
         evData >> modelPath;
+        LOG_INFO("Loading model [ %s ]", modelPath.getString());
         mModelPath = activateModel(modelPath);
         AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::ActionModelActivated, mModelPath), static_cast<DispatcherThread&>(*mCompThread));
     }
@@ -192,6 +198,7 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         evData >> probability;
         mTemperature = std::clamp(temperature, MIN_TEMPERATURE, MAX_TEMPERATURE);
         mProbability = std::clamp(probability, MIN_PROBABILITY, MAX_PROBABILITY);
+        LOG_INFO("Set temperature to [ %.2f ] and probability to [ %.2f ]", mTemperature, mProbability);
     }
     break;
         
@@ -207,15 +214,18 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         mTokenLimit = std::clamp(maxToken   , MIN_TOKENS    , MAX_TOKENS);
         mBatching   = std::clamp(maxBatch   , MIN_BATCHING  , MAX_BATCHING);
         mThreads    = std::clamp(maxThread  , MIN_THREADS   , AgentProcessor::optThreadCount());
+        LOG_INFO("Set limits - Text: [ %u ], Tokens: [ %u ], Batching: [ %u ], Threads: [ %u ]", mTextLimit, mTokenLimit, mBatching, mThreads);
     }
     break;
 
     default:
-        break;
+    {
+        LOG_WARN("Unknown action received: %d", data.getAction());
+    }
+    break;
     }
 }
 
-DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
 String AgentProcessor::processText(const String& prompt)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
@@ -363,7 +373,6 @@ String AgentProcessor::processText(const String& prompt)
     return response;
 }
 
-DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
 String AgentProcessor::activateModel(const String& modelPath)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
