@@ -25,6 +25,7 @@
 #include "multiedge/resources/nemultiedgesettings.hpp"
 #include "multiedge/aiagent/agentprovider.hpp"
 #include "multiedge/aiagent/agentchathistory.hpp"
+#include "multiedge/aiagent/agentprocessor.hpp"
 
 #include <QDir>
 #include <QFileDialog>
@@ -298,6 +299,16 @@ void AIAgent::setupData(void)
     ui->TxtAgentType->setText("N/A");
     ui->TxtModelDir->setText("N/A");
     
+    ui->TxtLength->setValidator(    new QIntValidator(AgentProcessor::MIN_CHARS   , AgentProcessor::MAX_CHARS         , this));
+    ui->TxtTokens->setValidator(    new QIntValidator(AgentProcessor::MIN_TOKENS  , AgentProcessor::MAX_TOKENS        , this));
+    ui->TxtBatching->setValidator(  new QIntValidator(AgentProcessor::MIN_BATCHING, AgentProcessor::MAX_BATCHING      , this));
+    ui->TxtThreads->setValidator(   new QIntValidator(AgentProcessor::MIN_THREADS , AgentProcessor::optThreadCount()  , this));
+    
+    ui->TxtLength->setText(QString::number(AgentProcessor::DEF_CHARS));
+    ui->TxtTokens->setText(QString::number(AgentProcessor::DEF_TOKENS));
+    ui->TxtBatching->setText(QString::number(AgentProcessor::DEF_BATCHING));
+    ui->TxtThreads->setText(QString::number(AgentProcessor::defThreadCount()));
+    
     mModel = new AgentChatHistory(this);
     ctrlTable()->setModel(mModel);
 }
@@ -352,8 +363,13 @@ void AIAgent::setupWidgets(void)
         ctrlConnect()->setEnabled(false);
     }
     
-    ui->BtnBest->setChecked(true);
+    ui->BtnPrecise->setChecked(true);
     ctrlTab()->setCurrentIndex(0);
+    
+    Qt::WindowFlags flags = windowFlags();
+    flags |= Qt::WindowMinimizeButtonHint;
+    flags |= Qt::WindowSystemMenuHint;
+    setWindowFlags(flags);
 }
 
 void AIAgent::setupSignals(void)
@@ -366,11 +382,12 @@ void AIAgent::setupSignals(void)
     connect(ctrlModels()    , &QListWidget::currentRowChanged, this, &AIAgent::onModelsRowChanged);
     connect(ctrlTable()     , &QTableView::activated        , this , &AIAgent::onTableSelChanged);
     connect(ctrlTable()     , &QTableView::doubleClicked    , this , &AIAgent::onTableSelChanged);
-    connect(ui->BtnBest     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.10f, 0.08f);});
-    connect(ui->BtnBetter   , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.30f, 0.07f);});
-    connect(ui->BtnAverage  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.50f, 0.05f);});
-    connect(ui->BtnFast     , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(0.75f, 0.05f);});
-    connect(ui->BtnFastest  , &QRadioButton::toggled, this  , [this](bool checked){if (checked) setTemperature(1.00f, 0.03f);});
+    connect(ui->BtnAnswer   , &QRadioButton::toggled, this, [this](bool checked){if (checked) setTemperature(0.00f, 0.00f);});
+    connect(ui->BtnPrecise  , &QRadioButton::toggled, this, [this](bool checked){if (checked) setTemperature(0.10f, 0.12f);});
+    connect(ui->BtnBalanced , &QRadioButton::toggled, this, [this](bool checked){if (checked) setTemperature(0.30f, 0.10f);});
+    connect(ui->BtnConvers  , &QRadioButton::toggled, this, [this](bool checked){if (checked) setTemperature(0.50f, 0.08f);});
+    connect(ui->BtnCreative , &QRadioButton::toggled, this, [this](bool checked){if (checked) setTemperature(0.75f, 0.06f);});
+    connect(ui->BtnExperim  , &QRadioButton::toggled, this, [this](bool checked){if (checked) setTemperature(1.00f, 0.05f);});
 }
 
 bool AIAgent::routerConnect(void)
@@ -472,15 +489,17 @@ void AIAgent::setTemperature(float newTemp, float newMinP)
 
 float AIAgent::getTemperature(void) const
 {
-    if (ui->BtnBest->isChecked())
+    if (ui->BtnAnswer->isChecked())
+        return 0.00f;
+    else if (ui->BtnPrecise->isChecked())
         return 0.10f;
-    else if (ui->BtnBetter->isChecked())
+    else if (ui->BtnBalanced->isChecked())
         return 0.30f;
-    else if (ui->BtnAverage->isChecked())
+    else if (ui->BtnConvers->isChecked())
         return 0.50f;
-    else if (ui->BtnFast->isChecked())
+    else if (ui->BtnCreative->isChecked())
         return 0.75f;
-    else if (ui->BtnFastest->isChecked())
+    else if (ui->BtnExperim->isChecked())
         return 1.00f;
 
     return 0.50f;
@@ -488,21 +507,84 @@ float AIAgent::getTemperature(void) const
 
 float AIAgent::getProbability(void) const
 {
-    if (ui->BtnBest->isChecked())
+    if (ui->BtnAnswer->isChecked())
+        return 0.00f;
+    else if (ui->BtnPrecise->isChecked())
+        return 0.12f;
+    else if (ui->BtnBalanced->isChecked())
+        return 0.10f;
+    else if (ui->BtnConvers->isChecked())
         return 0.08f;
-    else if (ui->BtnBetter->isChecked())
-        return 0.07f;
-    else if (ui->BtnAverage->isChecked())
+    else if (ui->BtnCreative->isChecked())
+        return 0.06f;
+    else if (ui->BtnExperim->isChecked())
         return 0.05f;
-    else if (ui->BtnFast->isChecked())
-        return 0.05f;
-    else if (ui->BtnFastest->isChecked())
-        return 0.03f;
 
-    return 0.05f;
+    return 0.50f;
 }
 
 void AIAgent::disconnectAgent(void)
 {
     routerDisconnect();
+}
+
+uint32_t AIAgent::getTextLength(void) const
+{
+    bool ok{false};
+    uint32_t res = ui->TxtLength->text().toUInt(&ok);
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        ui->TxtLength->setText(QString::number(AgentProcessor::DEF_CHARS));
+        return AgentProcessor::DEF_CHARS;
+    }
+}
+
+uint32_t AIAgent::getTokens(void) const
+{
+    bool ok{false};
+    uint32_t res = ui->TxtTokens->text().toUInt(&ok);
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        ui->TxtTokens->setText(QString::number(AgentProcessor::DEF_TOKENS));
+        return AgentProcessor::DEF_TOKENS;
+    }
+}
+
+uint32_t AIAgent::getBatching(void) const
+{
+    bool ok{false};
+    uint32_t res = ui->TxtBatching->text().toUInt();
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        ui->TxtBatching->setText(QString::number(AgentProcessor::DEF_BATCHING));
+        return AgentProcessor::DEF_BATCHING;
+    }
+}
+
+uint32_t AIAgent::getThreads(void) const
+{
+    bool ok{false};
+    uint32_t res = ui->TxtThreads->text().toUInt();
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        res = AgentProcessor::defThreadCount();
+        ui->TxtThreads->setText(QString::number(res));
+        return res;
+    }
 }

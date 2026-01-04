@@ -233,6 +233,11 @@ void EdgeDevice::setupWidgets(void)
     ctrlQuestion()->setEnabled(false);
     ctrlSend()->setEnabled(false);
     ctrlTab()->setCurrentIndex(0);
+    
+    Qt::WindowFlags flags = windowFlags();
+    flags |= Qt::WindowMinimizeButtonHint;
+    flags |= Qt::WindowSystemMenuHint;
+    setWindowFlags(flags);
 }
 
 void EdgeDevice::setupSignals(void)

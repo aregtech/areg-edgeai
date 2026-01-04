@@ -29,6 +29,10 @@
 
 class AgentProvider;
 
+//////////////////////////////////////////////////////////////////////////
+// AgentProcessorEventData event data class declaration
+//////////////////////////////////////////////////////////////////////////
+
 class AgentProcessorEventData
 {
 public:
@@ -42,6 +46,7 @@ public:
         , ActionActivateModel
         , ActionModelActivated
         , ActionTemperature
+        , ActionSetLimits
     };
 
 public:
@@ -50,6 +55,7 @@ public:
     AgentProcessorEventData(AgentProcessorEventData::eAction action, float temperature, float probability);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt, const SharedBuffer& video);
     AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t sessionId, const String& prompt);
+    AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t maxText, uint32_t maxTokens, uint32_t maxBatch, uint32_t maxThreads);
     AgentProcessorEventData(const AgentProcessorEventData& data);
     AgentProcessorEventData(AgentProcessorEventData&& data) noexcept;
     ~AgentProcessorEventData(void) = default;
@@ -74,20 +80,50 @@ private:
 
 DECLARE_EVENT(AgentProcessorEventData, AgentProcessorEvent, IEAgentProcessorEventConsumer);
 
+//////////////////////////////////////////////////////////////////////////
+// AgentProcessor class declaration
+//////////////////////////////////////////////////////////////////////////
+
 class AgentProcessor    : public IEWorkerThreadConsumer
                         , public IEAgentProcessorEventConsumer
 {
-private:
-    static constexpr uint32_t MAX_CHARS         { 1024u };
-    static constexpr uint32_t MAX_TOKENS        { 128u  };
-    static constexpr uint32_t MAX_THREADS       { 16u   };
+public:
+    static constexpr uint32_t MAX_CHARS         { 4096u };
+    static constexpr uint32_t MIN_CHARS         { 128u  };
+    static constexpr uint32_t DEF_CHARS         { 1024u };
+    
+    static constexpr uint32_t MAX_BATCHING      { 1024u };
+    static constexpr uint32_t MIN_BATCHING      { 128u  };
+    static constexpr uint32_t DEF_BATCHING      { 512u  };
+    
+    static constexpr uint32_t MAX_TOKENS        { 1024u };
+    static constexpr uint32_t MIN_TOKENS        { 64u   };
+    static constexpr uint32_t DEF_TOKENS        { 512u  };
+    
+    
+    static constexpr uint32_t MAX_THREADS       { 12u   };
     static constexpr uint32_t MIN_THREADS       { 2u    };
+    static constexpr uint32_t DEF_THREADS       { 8u    };
+    
+    
+    static constexpr float    MAX_TEMPERATURE   { 1.20f };
+    static constexpr float    MIN_TEMPERATURE   { 0.00f };
     static constexpr float    DEF_TEMPERATURE   { 0.10f };
+    
+    static constexpr float    MAX_PROBABILITY   { 0.20f };
+    static constexpr float    MIN_PROBABILITY   { 0.00f };
     static constexpr float    DEF_PROBABILITY   { 0.08f };
 
 public:
     AgentProcessor(void);
     virtual ~AgentProcessor(void) = default;
+    
+public:
+    
+    static uint32_t optThreadCount(void);
+    
+    static uint32_t defThreadCount(void);
+    
 protected:
 
 /************************************************************************/
@@ -147,11 +183,14 @@ private:
     uint32_t                mUserId;
     String                  mModelPath;
     llama_model_params      mModelParams;
+
     uint32_t                mTextLimit;
     uint32_t                mTokenLimit;
+    uint32_t                mBatching;
     uint32_t                mThreads;
     float                   mTemperature;
     float                   mProbability;
+
     llama_model*            mLLMModel;
 };
 
