@@ -50,6 +50,14 @@ public:
     
     inline QString getActiveModelPath(void) const;
 
+    uint32_t getTextLength(void) const;
+
+    uint32_t getTokens(void) const;
+
+    uint32_t getBatching(void) const;
+
+    uint32_t getThreads(void) const;
+
     float getTemperature(void) const;
 
     float getProbability(void) const;

@@ -112,8 +112,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>121</width>
-               <height>29</height>
+               <width>150</width>
+               <height>30</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -121,6 +121,12 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>150</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="text">
               <string>Activate</string>
@@ -131,9 +137,15 @@
               <rect>
                <x>0</x>
                <y>40</y>
-               <width>121</width>
-               <height>141</height>
+               <width>150</width>
+               <height>191</height>
               </rect>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>150</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="title">
               <string>Reply quality:</string>
@@ -155,9 +167,16 @@
                <number>9</number>
               </property>
               <item>
-               <widget class="QRadioButton" name="BtnBest">
+               <widget class="QRadioButton" name="BtnAnswer">
                 <property name="text">
-                 <string>The Best</string>
+                 <string>Answer</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="BtnPrecise">
+                <property name="text">
+                 <string>Precise</string>
                 </property>
                 <property name="iconSize">
                  <size>
@@ -171,30 +190,30 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="BtnBetter">
+               <widget class="QRadioButton" name="BtnBalanced">
                 <property name="text">
-                 <string>Better</string>
+                 <string>Balanced</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="BtnAverage">
+               <widget class="QRadioButton" name="BtnConvers">
                 <property name="text">
-                 <string>Average</string>
+                 <string>Conversational</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="BtnFast">
+               <widget class="QRadioButton" name="BtnCreative">
                 <property name="text">
                  <string>Creative</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="BtnFastest">
+               <widget class="QRadioButton" name="BtnExperim">
                 <property name="text">
-                 <string>Permissive</string>
+                 <string>Experimental</string>
                 </property>
                </widget>
               </item>
@@ -259,7 +278,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>120</width>
+              <width>150</width>
               <height>30</height>
              </size>
             </property>
@@ -282,7 +301,7 @@
              </size>
             </property>
             <property name="text">
-             <string>&amp;Connect</string>
+             <string>  &amp;Connect</string>
             </property>
             <property name="icon">
              <iconset theme="network-wireless"/>
@@ -306,6 +325,12 @@
           </item>
           <item row="3" column="2">
            <widget class="QPushButton" name="BtnBrowse">
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>30</height>
+             </size>
+            </property>
             <property name="text">
              <string>Browse...</string>
             </property>
@@ -317,35 +342,45 @@
        <item>
         <widget class="QWidget" name="widget_3" native="true">
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="TxtLength"/>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Batching:</string>
+            </property>
+           </widget>
           </item>
-          <item row="0" column="3">
-           <widget class="QLineEdit" name="TxtTokens"/>
-          </item>
-          <item row="0" column="5">
-           <widget class="QLineEdit" name="TxtCores"/>
-          </item>
-          <item row="0" column="4">
+          <item row="0" column="6">
            <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>Max. Cores:</string>
+             <string>Threads Use:</string>
             </property>
            </widget>
           </item>
           <item row="0" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Max. Text:</string>
+             <string>Text Length:</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="2">
+          <item row="0" column="5">
+           <widget class="QLineEdit" name="TxtTokens"/>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="TxtLength"/>
+          </item>
+          <item row="0" column="7">
+           <widget class="QLineEdit" name="TxtThreads"/>
+          </item>
+          <item row="0" column="4">
            <widget class="QLabel" name="label_11">
             <property name="text">
-             <string>Max. Tokens:</string>
+             <string>Tokens:</string>
             </property>
            </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="TxtBatching"/>
           </item>
          </layout>
         </widget>
@@ -512,6 +547,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="text">
+           <string>N/A</string>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -532,6 +570,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="text">
+           <string>N/A</string>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -549,6 +590,9 @@
      </item>
      <item>
       <widget class="QLineEdit" name="TxtActiveModel">
+       <property name="text">
+        <string>N/A</string>
+       </property>
        <property name="readOnly">
         <bool>true</bool>
        </property>

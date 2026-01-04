@@ -24,6 +24,10 @@
 #include <algorithm>
 #include <thread>
 
+//////////////////////////////////////////////////////////////////////////
+// AgentProcessorEventData event data class implementation
+//////////////////////////////////////////////////////////////////////////
+
 AgentProcessorEventData::AgentProcessorEventData(void)
     : mAction   (ActionUnknown)
     , mData     ()
@@ -62,6 +66,16 @@ AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eActio
     mData << video;
 }
 
+AgentProcessorEventData::AgentProcessorEventData(AgentProcessorEventData::eAction action, uint32_t maxText, uint32_t maxTokens, uint32_t maxBatch, uint32_t maxThreads)
+    : mAction   (action)
+    , mData     ()
+{
+    mData << maxText;
+    mData << maxTokens;
+    mData << maxBatch;
+    mData << maxThreads;
+}
+
 AgentProcessorEventData::AgentProcessorEventData(const AgentProcessorEventData& data)
     : mAction   (data.mAction)
     , mData     (data.mData)
@@ -96,22 +110,30 @@ AgentProcessorEventData& AgentProcessorEventData::operator = (AgentProcessorEven
     return (*this);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// AgentProcessor class implementation
+//////////////////////////////////////////////////////////////////////////
+
+uint32_t AgentProcessor::optThreadCount(void)
+{
+    uint32_t cores = std::thread::hardware_concurrency();
+    return (cores != 0 ? cores : MIN_THREADS);
+}
+
 AgentProcessor::AgentProcessor(void)
     : IEWorkerThreadConsumer(NEMultiEdgeSettings::CONSUMER_NAME)
     , IEAgentProcessorEventConsumer( )
     , mCompThread           (nullptr)
     , mSessionId            (0xFFFFFFFF)
     , mModelParams          (llama_model_default_params())
-    , mTextLimit            (MAX_CHARS)
-    , mTokenLimit           (MAX_TOKENS)
-    , mThreads              (1u)
+    , mTextLimit            (DEF_CHARS)
+    , mTokenLimit           (DEF_TOKENS)
+    , mBatching             (DEF_BATCHING)
+    , mThreads              (AgentProcessor::optThreadCount())
     , mTemperature          (DEF_TEMPERATURE)
     , mProbability          (DEF_PROBABILITY)
     , mLLMModel             (nullptr)
 {
-    uint32_t cores = std::thread::hardware_concurrency();
-    mThreads = std::clamp(cores, MIN_THREADS, MAX_THREADS);
-    mModelParams.n_gpu_layers = 99;
 }
 
 void AgentProcessor::registerEventConsumers(WorkerThread& workThread, ComponentThread& masterThread)
@@ -162,8 +184,23 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         float probability = 0.05f;
         evData >> temperature;
         evData >> probability;
-        mTemperature = std::clamp(temperature, 0.09f, 1.2f);
-        mProbability = std::clamp(probability, 0.01f, 0.2f);
+        mTemperature = std::clamp(temperature, MIN_TEMPERATURE, MAX_TEMPERATURE);
+        mProbability = std::clamp(probability, MIN_PROBABILITY, MAX_PROBABILITY);
+    }
+    break;
+        
+    case AgentProcessorEventData::ActionSetLimits:
+    {
+        const SharedBuffer& evData = data.getData();
+        uint32_t maxText    { DEF_CHARS };
+        uint32_t maxToken   { DEF_TOKENS };
+        uint32_t maxBatch   { DEF_BATCHING };
+        uint32_t maxThread  { DEF_THREADS };
+        evData >> maxText >> maxToken >> maxBatch >> maxThread;
+        mTextLimit  = std::clamp(maxText    , MIN_CHARS     , MAX_CHARS);
+        mTokenLimit = std::clamp(maxToken   , MIN_TOKENS    , MAX_TOKENS);
+        mBatching   = std::clamp(maxBatch   , MIN_BATCHING  , MAX_BATCHING);
+        mThreads    = std::clamp(maxThread  , MIN_CHARS     , MAX_CHARS);
     }
     break;
 
@@ -176,10 +213,12 @@ DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
 String AgentProcessor::processText(const String& prompt)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProcessor_processText);
+
+    String response;
     if (prompt.isEmpty() || mLLMModel == nullptr)
     {
-        LOG_ERR("The prompt is empty (len = %d) or LLM model is not activated (%s null), cannot process text...", prompt.getLength(), mLLMModel != nullptr ? "IS NOT" : "IS");
-        return String();
+        LOG_ERR("Prompt empty or model not activated");
+        return response;
     }
 
     const llama_vocab* vocab = llama_model_get_vocab(mLLMModel);
@@ -187,28 +226,43 @@ String AgentProcessor::processText(const String& prompt)
     // Create a fresh context per request
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx    = mTextLimit;
-    ctx_params.n_batch  = mTokenLimit;
+    ctx_params.n_batch  = mBatching;
     ctx_params.n_threads= mThreads;
     ctx_params.no_perf  = true;
-
-    String response;
     llama_context* ctx = llama_init_from_model(mLLMModel, ctx_params);
-    if (!ctx) 
+    if (ctx == nullptr)
     {
-        LOG_ERR("Failed to create LLM context from model");
+        LOG_ERR("Failed to create llama context");
         return response;
     }
 
-    // create sampler
+    // Sampler chain (correct order)
     llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
-    llama_sampler_chain_add(smpl, llama_sampler_init_min_p(mProbability, 1));
-    llama_sampler_chain_add(smpl, llama_sampler_init_temp(mTemperature));
-    llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+    // Light repetition control (important for agents)
+    llama_sampler*  penalities = llama_sampler_init_penalties( /* repeat_last_n */ 64
+                                                             , /* repeat_penalty */ 1.10f
+                                                             , /* freq_penalty   */ 0.0f
+                                                             , /* present_penalty*/ 0.0f);
+    llama_sampler_chain_add(smpl, penalities);
+    if (mTemperature == 0.0f)
+    {
+        llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+    }
+    else
+    {
+        // Temperature (low = precise)
+        llama_sampler_chain_add(smpl, llama_sampler_init_temp(mTemperature));
+        // min_p filtering (FIXED: min_keep > 1)
+        llama_sampler_chain_add(smpl, llama_sampler_init_min_p(mProbability, 5));
+        // Final distribution
+        llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+    }
 
     // Tokenize prompt
     const bool add_bos = true;
     const int n_prompt = -llama_tokenize(vocab, prompt.getString(), prompt.getLength(), nullptr, 0, add_bos, true);
-    if (n_prompt <= 0) 
+
+    if (n_prompt <= 0)
     {
         LOG_ERR("Failed to tokenize prompt, returned value %d", n_prompt);
         llama_sampler_free(smpl);
@@ -219,7 +273,7 @@ String AgentProcessor::processText(const String& prompt)
     std::vector<llama_token> tokens(n_prompt);
     if (llama_tokenize(vocab, prompt.getString(), prompt.getLength(), tokens.data(), tokens.size(), add_bos, true) < 0)
     {
-        LOG_ERR("Failed to tokenize prompt, returned value %d", n_prompt);
+        LOG_ERR("Tokenization failed");
         llama_sampler_free(smpl);
         llama_free(ctx);
         return response;
@@ -236,18 +290,22 @@ String AgentProcessor::processText(const String& prompt)
     }
 
     // Generation loop
-    response.reserve(MAX_CHARS);
-    llama_token token;
+    response.reserve(mTextLimit);
     char buf[256];
-    std::string pieces;
-    pieces.reserve(256);
-    for (int i = 0; i < mTokenLimit; ++i)
+    String sentence;
+    sentence.reserve(256);
+    constexpr std::string_view space{" "};
+
+    const uint32_t tokenLimit = (mTemperature <= 0.2f) ? MIN_TOKENS : mTokenLimit;
+    for (uint32_t i = 0; i < tokenLimit; ++i)
     {
-        token = llama_sampler_sample(smpl, ctx, -1);
+        llama_token token = llama_sampler_sample(smpl, ctx, -1);
+
         if (llama_vocab_is_eog(vocab, token))
         {
-            LOG_INFO("Adding last piece [ %s ]", pieces.c_str());
-            response += pieces;
+            sentence.trimAll();
+            LOG_INFO("Adding last piece [ %s ]", sentence.getString());
+            response += sentence;
             LOG_DBG("End of generation token reached, interrupting text processing.");
             break;
         }
@@ -259,30 +317,40 @@ String AgentProcessor::processText(const String& prompt)
             break;
         }
 
-        pieces.append(buf, n);
-        if (pieces.size() >= 256)
+        sentence.append(buf, n);
+        const char ch{ sentence.getData().back()};
+        if ((ch == '.') || (ch == '!') || (ch == '?'))
         {
-            LOG_INFO("Appending pieces: [ %s ]", pieces.c_str());
-            response += pieces;
-            pieces.clear();
-            pieces.reserve(256);
-            if (response.getLength() >= mTextLimit)
+            sentence.trimAll();
+            LOG_INFO("Appending sentence: [ %s ]", sentence.getString());
+            response += sentence;
+            if (mTemperature == 0.0f)
+            {
+                // On greedy mode, flush per sentence
+                LOG_WARN("Greedy mode - flushing per sentence.");
+                break;
+            }
+            else if (response.getLength() >= mTextLimit)
             {
                 LOG_WARN("Maximum character limit reached, interrupting text processing.");
                 break;
             }
+            
+            response += space;
+            sentence.clear();
+            sentence.reserve(256);
         }
 
         batch = llama_batch_get_one(&token, 1);
         if (llama_decode(ctx, batch) != 0)
         {
-            response += pieces;
+            response += sentence;
             LOG_ERR("Failed to decode token");
             break;
         }
     }
 
-    // Cleanup
+    // cleanup
     llama_sampler_free(smpl);
     llama_free(ctx);
 
@@ -293,36 +361,31 @@ DEF_LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
 String AgentProcessor::activateModel(const String& modelPath)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProcessor_activateModel);
-    
+
     if (modelPath.isEmpty())
-    {
-        LOG_ERR("The model path is empty, cannot activate model...");
         return String();
-    }
 
-    const QString qPath = QString::fromUtf8(modelPath.getString());
-    QFileInfo fi(qPath);
+    QFileInfo fi(QString::fromUtf8(modelPath.getString()));
     if (!fi.exists() || !fi.isFile())
-    {
-        LOG_ERR("The model file does not exist at path [%s], cannot active model...", modelPath.getString());
         return String();
-    }
 
-    // Release previous model
     freeModel();
 
-    const QByteArray utf8Path = fi.absoluteFilePath().toUtf8();
-    mLLMModel = llama_model_load_from_file(utf8Path.constData(), mModelParams);
+    mModelParams.n_gpu_layers= 99; // safe default, ignored on CPU
+    mModelParams.use_mmap    = true;
+    mModelParams.use_mlock   = true;
+
+    const QByteArray path = fi.absoluteFilePath().toUtf8();
+    mLLMModel = llama_model_load_from_file(path.constData(), mModelParams);
     if (mLLMModel == nullptr)
     {
-        LOG_ERR("Failed to load LLM model from file [%s]", utf8Path.constData());
+        LOG_ERR("Model load failed");
         return String();
     }
 
     // Context is NOT created here on purpose
     // Contexts are per-request to avoid topic mixing
-
-    LOG_DBG("Successfully activated LLM model from file [%s]", utf8Path.constData());
+    LOG_DBG("Model activated: %s", path.constData());
     return modelPath;
 }
 

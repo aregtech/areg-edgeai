@@ -41,18 +41,9 @@ AgentProvider* AgentProvider::getService(void)
 void AgentProvider::activateModel(const QString & modelPath)
 {
     AgentProvider* service = getService();
-    if ((service != nullptr) && (service->mWorkerThread != nullptr) && (modelPath.isEmpty() == false))
+    if ((service != nullptr) && (modelPath.isEmpty() == false))
     {
-        ASSERT(service->mAIAgent != nullptr);
-        String model(modelPath.toStdString());
-        float temperature = service->mAIAgent->getTemperature();
-        float probability = service->mAIAgent->getProbability();
-        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model)
-                                        , *(service->mWorkerThread)
-                                        , Event::eEventPriority::EventPriorityHigh);
-        AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionTemperature, temperature, probability)
-                                        , *(service->mWorkerThread)
-                                        , Event::eEventPriority::EventPriorityHigh);
+        service->_activateModel(modelPath);
     }
 }
 
@@ -103,10 +94,7 @@ void AgentProvider::startupServiceInterface(Component& holder)
     emit signalQueueSize(0);
     
     ASSERT(mWorkerThread != nullptr);
-    ASSERT(mWorkerThread->isReady());
-    QString modelPath = mAIAgent->getActiveModelPath();
-    String model(modelPath.toStdString());
-    AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model), *mWorkerThread);
+    _activateModel(mAIAgent->getActiveModelPath());
 }
 
 void AgentProvider::shutdownServiceInterface(Component& holder)
@@ -244,4 +232,32 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
 inline AgentProvider& AgentProvider::self(void)
 {
     return *this;
+}
+
+inline void AgentProvider::_activateModel(const QString& modelPath)
+{
+    if (mWorkerThread == nullptr)
+        return;
+    
+    ASSERT(mWorkerThread->isReady());
+    ASSERT(mAIAgent != nullptr);
+    String model(modelPath.toStdString());
+    float temperature = mAIAgent->getTemperature();
+    float probability = mAIAgent->getProbability();
+    uint32_t length = mAIAgent->getTextLength();
+    uint32_t batch  = mAIAgent->getBatching();
+    uint32_t token  = mAIAgent->getTokens();
+    uint32_t thread = mAIAgent->getThreads();
+    
+    AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionActivateModel, model)
+                                   , *mWorkerThread
+                                   , Event::eEventPriority::EventPriorityHigh);
+    
+    AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionTemperature, temperature, probability)
+                                   , *mWorkerThread
+                                   , Event::eEventPriority::EventPriorityHigh);
+    
+    AgentProcessorEvent::sendEvent(AgentProcessorEventData(AgentProcessorEventData::eAction::ActionSetLimits, length, token, batch, thread)
+                                   , *mWorkerThread
+                                   , Event::eEventPriority::EventPriorityHigh);
 }

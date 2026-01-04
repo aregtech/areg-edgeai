@@ -171,6 +171,8 @@ private:
 
     inline AgentProvider& self(void);
     
+    inline void _activateModel(const QString& modelPath);
+    
 private:
     AIAgent*        mAIAgent;
     eAgentState     mAgentState;
