@@ -120,6 +120,12 @@ uint32_t AgentProcessor::optThreadCount(void)
     return (cores != 0 ? cores : MIN_THREADS);
 }
 
+uint32_t AgentProcessor::defThreadCount(void)
+{
+    uint32_t cores = AgentProcessor::optThreadCount();
+    return std::clamp(cores, MIN_THREADS, MAX_THREADS);
+}
+
 AgentProcessor::AgentProcessor(void)
     : IEWorkerThreadConsumer(NEMultiEdgeSettings::CONSUMER_NAME)
     , IEAgentProcessorEventConsumer( )
@@ -129,7 +135,7 @@ AgentProcessor::AgentProcessor(void)
     , mTextLimit            (DEF_CHARS)
     , mTokenLimit           (DEF_TOKENS)
     , mBatching             (DEF_BATCHING)
-    , mThreads              (AgentProcessor::optThreadCount())
+    , mThreads              (AgentProcessor::defThreadCount())
     , mTemperature          (DEF_TEMPERATURE)
     , mProbability          (DEF_PROBABILITY)
     , mLLMModel             (nullptr)
@@ -200,7 +206,7 @@ void AgentProcessor::processEvent(const AgentProcessorEventData& data)
         mTextLimit  = std::clamp(maxText    , MIN_CHARS     , MAX_CHARS);
         mTokenLimit = std::clamp(maxToken   , MIN_TOKENS    , MAX_TOKENS);
         mBatching   = std::clamp(maxBatch   , MIN_BATCHING  , MAX_BATCHING);
-        mThreads    = std::clamp(maxThread  , MIN_CHARS     , MAX_CHARS);
+        mThreads    = std::clamp(maxThread  , MIN_THREADS   , AgentProcessor::optThreadCount());
     }
     break;
 
@@ -239,11 +245,11 @@ String AgentProcessor::processText(const String& prompt)
     // Sampler chain (correct order)
     llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
     // Light repetition control (important for agents)
-    llama_sampler*  penalities = llama_sampler_init_penalties( /* repeat_last_n */ 64
+    llama_sampler*  penalties = llama_sampler_init_penalties( /* repeat_last_n */ 64
                                                              , /* repeat_penalty */ 1.10f
                                                              , /* freq_penalty   */ 0.0f
                                                              , /* present_penalty*/ 0.0f);
-    llama_sampler_chain_add(smpl, penalities);
+    llama_sampler_chain_add(smpl, penalties );
     if (mTemperature == 0.0f)
     {
         llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
@@ -291,9 +297,9 @@ String AgentProcessor::processText(const String& prompt)
 
     // Generation loop
     response.reserve(mTextLimit);
-    char buf[256];
+    char buf[DEF_CHARS];
     String sentence;
-    sentence.reserve(256);
+    sentence.reserve(DEF_CHARS);
     constexpr std::string_view space{" "};
 
     const uint32_t tokenLimit = (mTemperature <= 0.2f) ? MIN_TOKENS : mTokenLimit;
@@ -318,7 +324,7 @@ String AgentProcessor::processText(const String& prompt)
         }
 
         sentence.append(buf, n);
-        const char ch{ sentence.getData().back()};
+        const char ch{ sentence.isEmpty() ? '\0' : sentence.getData().back()};
         if ((ch == '.') || (ch == '!') || (ch == '?'))
         {
             sentence.trimAll();
@@ -338,7 +344,7 @@ String AgentProcessor::processText(const String& prompt)
             
             response += space;
             sentence.clear();
-            sentence.reserve(256);
+            sentence.reserve(DEF_CHARS);
         }
 
         batch = llama_batch_get_one(&token, 1);

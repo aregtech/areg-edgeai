@@ -35,7 +35,7 @@
       <enum>Qt::FocusPolicy::WheelFocus</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="WndConnect">
       <property name="sizePolicy">
@@ -352,6 +352,9 @@
                </property>
                <property name="sizeAdjustPolicy">
                 <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
+               </property>
+               <property name="placeholderText">
+                <string>Ask here anything</string>
                </property>
               </widget>
              </item>

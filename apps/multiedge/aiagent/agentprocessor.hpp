@@ -101,7 +101,7 @@ public:
     static constexpr uint32_t DEF_TOKENS        { 512u  };
     
     
-    static constexpr uint32_t MAX_THREADS       { 16u   };
+    static constexpr uint32_t MAX_THREADS       { 12u   };
     static constexpr uint32_t MIN_THREADS       { 2u    };
     static constexpr uint32_t DEF_THREADS       { 8u    };
     
@@ -121,6 +121,8 @@ public:
 public:
     
     static uint32_t optThreadCount(void);
+    
+    static uint32_t defThreadCount(void);
     
 protected:
 

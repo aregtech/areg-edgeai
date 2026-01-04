@@ -11,12 +11,8 @@ list(APPEND EDGEDEVICE_HDR
 )
 
 if (WIN32)
-list(APPEND EDGEDEVICE_RC
-    "${MULTIEDGE_RESOURCE}/edgedevice.rc"
-)
-list(APPEND AIAGENT_RC
-    "${MULTIEDGE_RESOURCE}/aiagent.rc"
-)
+    list(APPEND EDGEDEVICE_RC "${MULTIEDGE_RESOURCE}/edgedevice.rc")
+    list(APPEND AIAGENT_RC    "${MULTIEDGE_RESOURCE}/aiagent.rc")
 endif(WIN32)
 
 qt_create_translation(MULTIEDGE_TRANS_FILES ${CMAKE_SOURCE_DIR} ${MULTIEDGE_TRANS})

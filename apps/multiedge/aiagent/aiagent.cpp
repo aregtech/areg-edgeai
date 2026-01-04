@@ -307,7 +307,7 @@ void AIAgent::setupData(void)
     ui->TxtLength->setText(QString::number(AgentProcessor::DEF_CHARS));
     ui->TxtTokens->setText(QString::number(AgentProcessor::DEF_TOKENS));
     ui->TxtBatching->setText(QString::number(AgentProcessor::DEF_BATCHING));
-    ui->TxtThreads->setText(QString::number(AgentProcessor::DEF_THREADS));
+    ui->TxtThreads->setText(QString::number(AgentProcessor::defThreadCount()));
     
     mModel = new AgentChatHistory(this);
     ctrlTable()->setModel(mModel);
@@ -530,20 +530,61 @@ void AIAgent::disconnectAgent(void)
 
 uint32_t AIAgent::getTextLength(void) const
 {
-    return ui->TxtLength->text().toUInt();
+    bool ok{false};
+    uint32_t res = ui->TxtLength->text().toUInt(&ok);
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        ui->TxtLength->setText(QString::number(AgentProcessor::DEF_CHARS));
+        return AgentProcessor::DEF_CHARS;
+    }
 }
 
 uint32_t AIAgent::getTokens(void) const
 {
-    return ui->TxtTokens->text().toUInt();
+    bool ok{false};
+    uint32_t res = ui->TxtTokens->text().toUInt(&ok);
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        ui->TxtTokens->setText(QString::number(AgentProcessor::DEF_TOKENS));
+        return AgentProcessor::DEF_TOKENS;
+    }
 }
 
 uint32_t AIAgent::getBatching(void) const
 {
-    return ui->TxtBatching->text().toUInt();
+    bool ok{false};
+    uint32_t res = ui->TxtBatching->text().toUInt();
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        ui->TxtBatching->setText(QString::number(AgentProcessor::DEF_BATCHING));
+        return AgentProcessor::DEF_BATCHING;
+    }
 }
 
 uint32_t AIAgent::getThreads(void) const
 {
-    return ui->TxtThreads->text().toUInt();
+    bool ok{false};
+    uint32_t res = ui->TxtThreads->text().toUInt();
+    if (ok)
+    {
+        return res;
+    }
+    else
+    {
+        res = AgentProcessor::defThreadCount();
+        ui->TxtThreads->setText(QString::number(res));
+        return res;
+    }
 }
