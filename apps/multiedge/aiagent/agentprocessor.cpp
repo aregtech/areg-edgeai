@@ -356,6 +356,15 @@ String AgentProcessor::processText(const String& prompt)
             sentence.clear();
             sentence.reserve(DEF_CHARS);
         }
+        else if (sentence.getLength() >= 300)
+        {
+            sentence.trimAll();
+            LOG_INFO("Appending sentence: [ %s ]", sentence.getString());
+            response += sentence;
+            response += space;
+            sentence.clear();
+            sentence.reserve(DEF_CHARS);
+        }
 
         batch = llama_batch_get_one(&token, 1);
         if (llama_decode(ctx, batch) != 0)
