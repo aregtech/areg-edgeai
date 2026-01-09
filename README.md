@@ -17,7 +17,7 @@ are first class concepts. It is designed for systems that require predictability
 clear ownership, and strong runtime observability.
 
 This repository demonstrates how Edge AI agents can be modeled as
-Areg services. Each agent acts as a service provider or a consumer,
+Areg services. Each agent acts as a service provider, or a consumer, or both of them,
 communicating through well defined interfaces instead of ad hoc message passing.
 Areg manages discovery, message routing, threading, and fault isolation,
 allowing AI logic to remain focused, testable, and reusable.
@@ -37,40 +37,37 @@ traceable, and ready for production from the start.
 ## Project Building
 
 The projects in this repository are built using the
-[Areg framework](https://github.com/aregtech/areg-sdk) and
-[Qt libraries](https://www.qt.io/development/download-qt-installer-oss) for UI development.
-CMake is used as the primary build system.
+[**Areg framework**](https://github.com/aregtech/areg-sdk),
+[**Qt libraries**](https://www.qt.io/development/download-qt-installer-oss) for UI development,
+and [**llama.cpp**](https://github.com/ggml-org/llama.cpp) AI agent. 
+Additional AI engines or agent types may be introduced in the future by need.
+**CMake** is used as the primary build system.
 
 It is recommended to build the projects using **Qt Creator**.
 Alternatively, the projects can be built from the command line, provided that
 the required Qt packages are installed on the system.
 
-The Areg framework is **automatically downloaded and built**
+The `areg` and `llama.cpp` frameworks are **automatically downloaded and built**
 as part of the project build process.
-
-For Edge AI functionality, the project plans to integrate
-[llama.cpp](https://github.com/ggml-org/llama.cpp) as the AI engine.
-Additional AI engines or agent types may be introduced in the future.
 
 ### Requirements
 
 > [!IMPORTANT]
-> **You should have installed [git-lfs](https://git-lfs.com/) in your system to clone this repository!**
+> **You should have installed AI Models supported by llama.cpp to run applications!**
+> Models can be downloaded manually and tested from the [https://huggingface.co/models](https://huggingface.co/models) repository. Filter models by `llama.cpp` Apps and `TextGeneration` Tasks to find compatible models.
 
 - **C++17 compatible compiler**  
   GCC, Clang, MSVC, or MinGW
-- **CMake 3.20 or newer**
+- **CMake 3.20 or newer**  
+  Required to build applications
 - **Java 17 or newer**  
   Required for code generation tools
 - **Qt 5.12 or newer**  
   Required for UI based projects
-- **Git with git-lfs support**  
-  Required to clone AI model files
 - **Supported Edge AI engine**  
   Currently, only `llama.cpp` is supported.
-
-> [!NOTE]
-> More models can be downloaded manually and tested from the [https://huggingface.co/models](https://huggingface.co/models) repository. Filter models by `llama.cpp` App tag to find compatible models.
+- **Other tools**  
+  Optionally, clone [Lusan](https://github.com/aregtech/areg-sdk-tools) application, follow the instructions of Lusan (Qt, logcollectors, etc.) to build and run it for **log visualization**.
 
 ### Supported Platforms
 
@@ -90,7 +87,7 @@ These cases represent the intended direction of the project.
 
 ### Case 1: One AI agent serving multiple clients
 
-**This use case is part of the current implementation.**
+**This use case is functional and can be tested by running applications `aiagent` as AI Service Provider and `edgedevice` as Service Consumers** (device simulation).
 
 A single AI agent receives text processing requests from multiple clients.
 Clients may appear or disappear on the local network at any time.
@@ -103,9 +100,38 @@ to the correct client without mixing results.
 2. Requests are queued on the AI Service Provider side. Each reply is delivered to the correct client.
 3. Automatic service discovery. When the AI Service Provider becomes available on the network, all Service Consumers receive a service available notification and can start communicating.
 
+Steps to run the demo:
+1. Build the project using Qt Creator or CMake command line. Optionally build `lusan` application.
+2. Start `mtrouter` as a console application or system service on any device in the network to act as message router. Make sure that it has `./config/areg.init` configuration file available in the working directory, and the IP address and port number of the `router` section are correctly set (properties [`router::*::address::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L188) and [`router::*::port::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L189)).
+3. Optionally, start `logcollector` as a console application or system service on any device in the network if you plan to visualize logs in Lusan. Make sure that it has `./config/areg.init` configuration file available in the working directory, and the IP address and port number are correctly set (properties [`logger::*::address::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L197) and [`logger::*::port::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L198)).
+4. Start `aiagent` application on any (powerful) machine in the network to act as an AI Service Provider. 
+   - Make sure that it has `./config/areg.init` configuration file available in the working directory, and the IP addresses and port numbers of the `mtrouter` and optionally of the `logcollector` are correctly set.
+   - The default configuration information of the `mcrouter`(IP-address and port number) are automatically read out from `./config/areg.init` file and displayed on the `Connection` page of the `aiagent`:
+     ![AI Agent Configuration](docs/img/aiagent-config.png)
+   - The list of models are automatically read out from `./models/llama/text/` sub-directory of working directory. The models are copied during build, you can as well add the manually.
+   - Select the model you want to test, select the `Reply Quality` you want to have, optionally you can change other parameters like `Text Length`, `Threads Use`, etc.
+   - Click `Connect` button to connect to `mtrouter` and activate the model with selected parameters.
+   - The model and parameters can be as well changed during runtime by clicking button `Activate`
+   - If models have other location, click button `Browse...` to select another model directory.
+   - When `aiagent` is successfully connected to `mtrouter`, the status is changed and automatically is switched to `AI Agent Chat` page.
+5. Start one or more instances of `edgedevice` application on any (less powerful) machines in the network to act as Service Consumers.   
+   - Make sure that each instance has `./config/areg.init` configuration file available in the working directory, and the IP addresses and port numbers of the `mtrouter` and optionally of the `logcollector` are correctly set.
+   - The default configuration information of the `mcrouter`(IP-address and port number) are automatically read out from `./config/areg.init` file and displayed on the `Connection` page of the `edgedevice`:
+     ![Edge Device Configuration](docs/img/edgedevice-config.png)
+   - Click `Connect` button to connect to `mtrouter`.
+   - When `edgedevice` is successfully connected to `mtrouter`, the status is changed and automatically is switched to `AI Agent Chat` page.
+
+Screenshot of the multiple `edgedevice` chat with `aiagent` application:
+![Multiple Edge Device Chat](docs/img/multiclient-general.png.png)
+
+> [!TIP]
+> The start of `mtrouter`, `logcollector`, `aiagent`, and `edgedevice` applications can be done in any order. The system will automatically discover services as they become available. You can ask questions without waiting for the reply. Each `edgedevice` instance and each question will receive its own reply from the `aiagent` application.
+
 ---
 
 ### Case 2: Multiple AI agents managed by a central service
+
+**This use case is part of the current implementation.**
 
 A central service provider receives requests from many clients.
 For each request, the provider starts a dedicated thread or process
