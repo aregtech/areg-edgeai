@@ -205,30 +205,18 @@ void EdgeDevice::setupWidgets(void)
 
     // Ensure the header is explicitly shown. Designer settings / style sheets can keep it hidden,
     // and changing resize mode on a hidden header has no visible effect.
-    if (QTableView* table = ctrlTable())
+    QTableView* table = ctrlTable();
+    ASSERT(table != nullptr);
+    if (QHeaderView* header = table->horizontalHeader())
     {
-        table->setCornerButtonEnabled(false);
-
-        if (QHeaderView* header = table->horizontalHeader())
-        {
-            header->setVisible(true);
-            header->setHighlightSections(false);
-            header->setSectionsClickable(true);
-            header->setStretchLastSection(true);
-            header->setSectionResizeMode(QHeaderView::Interactive);
-            header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
-            header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
-            header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
-            header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
-        }
-
-        table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-        table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-
-        // Make sure the view has some header height calculated and repaints with updated header state.
-        table->updateGeometry();
-        table->viewport()->update();
+        header->setVisible(true);
+        header->setSectionResizeMode(QHeaderView::Interactive);
+        header->setStretchLastSection(true);
     }
+
+    // Make sure the view has some header height calculated and repaints with updated header state.
+    table->updateGeometry();
+    table->viewport()->update();
 
     ctrlQuestion()->setEnabled(false);
     ctrlSend()->setEnabled(false);

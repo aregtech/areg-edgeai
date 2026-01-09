@@ -320,23 +320,12 @@ void AIAgent::setupWidgets(void)
     // and changing resize mode on a hidden header has no visible effect.
     QTableView* table = ctrlTable();
     ASSERT(table != nullptr);
-    table->setCornerButtonEnabled(false);
-        
     if (QHeaderView* header = table->horizontalHeader())
     {
         header->setVisible(true);
-        header->setHighlightSections(false);
-        header->setSectionsClickable(true);
-        header->setStretchLastSection(true);
         header->setSectionResizeMode(QHeaderView::Interactive);
-        header->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
-        header->setSectionResizeMode(1, QHeaderView::ResizeMode::Interactive);
-        header->setSectionResizeMode(2, QHeaderView::ResizeMode::Interactive);
-        header->setSectionResizeMode(3, QHeaderView::ResizeMode::Interactive);
+        header->setStretchLastSection(true);
     }
-        
-    table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-    table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         
     // Make sure the view has some header height calculated and repaints with updated header state.
     table->updateGeometry();

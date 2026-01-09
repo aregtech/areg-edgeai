@@ -29,7 +29,7 @@
       <enum>Qt::FocusPolicy::WheelFocus</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="WndConnect">
       <property name="sizePolicy">
@@ -440,7 +440,7 @@
              <bool>true</bool>
             </property>
             <property name="selectionMode">
-             <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+             <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
             </property>
             <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
@@ -451,11 +451,14 @@
               <height>16</height>
              </size>
             </property>
+            <property name="cornerButtonEnabled">
+             <bool>false</bool>
+            </property>
             <attribute name="horizontalHeaderCascadingSectionResizes">
              <bool>true</bool>
             </attribute>
             <attribute name="horizontalHeaderMinimumSectionSize">
-             <number>50</number>
+             <number>40</number>
             </attribute>
             <attribute name="horizontalHeaderDefaultSectionSize">
              <number>150</number>
@@ -484,6 +487,9 @@
          </property>
          <property name="readOnly">
           <bool>true</bool>
+         </property>
+         <property name="placeholderText">
+          <string>Double click on the entry in the Chat History table to see full text here...</string>
          </property>
         </widget>
        </item>
