@@ -108,7 +108,7 @@ A single AI agent processes text requests from multiple clients connected over a
 4. **Start `aiagent` (AI Service Provider)**  
    Run `aiagent` on a sufficiently powerful machine.
    - Ensure `./config/areg.init` is present and correctly configured for `mtrouter` (and optionally `logcollector`).
-   - The router configuration is automatically loaded from `areg.init` and displayed on the **Router Connection** page:
+   - The router configuration is automatically loaded from `areg.init` and displayed on the **Router Connection** page. This is a screenshot of already connected and model activated page:
      ![AI Agent Configuration](docs/img/aiagent-config.png)
    - AI models located in the `./models/llama/text/` folder of working directory are automatically listed.
    - Select a model, choose the desired **Reply Quality**, and optionally adjust parameters such as **Text Length** and **Threads Use**.
@@ -120,7 +120,7 @@ A single AI agent processes text requests from multiple clients connected over a
 5. **Start one or more `edgedevice` instances (Service Consumers)**  
    Run `edgedevice` on one or more less powerful machines.
    - Ensure each instance has its own `./config/areg.init` file with correct `mtrouter` (and optional `logcollector`) settings.
-   - The router configuration is automatically displayed on the **Router Connection** page:
+   - The router configuration is automatically displayed on the **Router Connection** page. This is a screenshot of already connected and model activated page:
      ![Edge Device Configuration](docs/img/edgedevice-config.png)
    - Click **Connect** to join the network.
    - Once connected, the application automatically switches to the **AI Agent Chat** page.
