@@ -36,25 +36,15 @@ traceable, and ready for production from the start.
 
 ## Project Building
 
-The projects in this repository are built using the
-[**Areg framework**](https://github.com/aregtech/areg-sdk),
-[**Qt libraries**](https://www.qt.io/development/download-qt-installer-oss) for UI development,
-and [**llama.cpp**](https://github.com/ggml-org/llama.cpp) AI agent. 
-Additional AI engines or agent types may be introduced in the future by need.
-**CMake** is used as the primary build system.
 
-It is recommended to build the projects using **Qt Creator**.
-Alternatively, the projects can be built from the command line, provided that
-the required Qt packages are installed on the system.
+## Project Building
 
-The `areg` and `llama.cpp` frameworks are **automatically downloaded and built**
-as part of the project build process.
-
-### Requirements
+Projects in this repository are built with the [**AREG Framework**](https://github.com/aregtech/areg-sdk), [**Qt**](https://www.qt.io/development/download-qt-installer-oss) for UI development, and the [**llama.cpp**](https://github.com/ggml-org/llama.cpp) Edge AI engine. **CMake** is used as the primary build system, and both `areg` and `llama.cpp` are automatically downloaded and built during the build process. Building with **Qt Creator** is recommended, though command-line builds are fully supported if the required Qt packages are installed. 
 
 > [!IMPORTANT]
-> **You should have installed AI Models supported by llama.cpp to run applications!**
-> Models can be downloaded manually and tested from the [https://huggingface.co/models](https://huggingface.co/models) repository. Filter models by `llama.cpp` Apps and `TextGeneration` Tasks to find compatible models.
+> To run the applications, you must have AI models compatible with `llama.cpp` (available from [Hugging Face](https://huggingface.co/models), filtered by `llama.cpp` and `TextGeneration`).
+
+### Requirements
 
 - **C++17 compatible compiler**  
   GCC, Clang, MSVC, or MinGW
@@ -67,7 +57,7 @@ as part of the project build process.
 - **Supported Edge AI engine**  
   Currently, only `llama.cpp` is supported.
 - **Other tools**  
-  Optionally, clone [Lusan](https://github.com/aregtech/areg-sdk-tools) application, follow the instructions of Lusan (Qt, logcollectors, etc.) to build and run it for **log visualization**.
+  For advanced log or service interface visualization, the optional [**Lusan**](https://github.com/aregtech/areg-sdk-tools) tool can be built and used alongside these projects.
 
 ### Supported Platforms
 
@@ -85,47 +75,63 @@ These cases represent the intended direction of the project.
 
 ---
 
-### Case 1: One AI agent serving multiple clients
+### Use Case 1: One AI Agent Serving Multiple Clients
 
-**This use case is functional and can be tested by running applications `aiagent` as AI Service Provider and `edgedevice` as Service Consumers** (device simulation).
+**This use case is fully functional and can be tested by running the `aiagent` application as the AI Service Provider and one or more `edgedevice` applications as Service Consumers (device simulations).**
 
-A single AI agent receives text processing requests from multiple clients.
-Clients may appear or disappear on the local network at any time.
-When the agent is online, clients can submit requests and receive responses.
-Requests are queued on the agent side, and each response is delivered
-to the correct client without mixing results.
+A single AI agent processes text requests from multiple clients connected over a local network. Clients may join or leave at any time. When the AI agent is online, it accepts requests, queues them internally, and returns each response to the correct client without mixing results.
 
-**Key features to demonstrate:**
-1. No startup order is required. The AI Service Provider and the Service Consumers can join or leave the network at any moment without destabilizing the system.
-2. Requests are queued on the AI Service Provider side. Each reply is delivered to the correct client.
-3. Automatic service discovery. When the AI Service Provider becomes available on the network, all Service Consumers receive a service available notification and can start communicating.
+**Key capabilities demonstrated:**
+1. **No startup order dependency** – the AI Service Provider and Service Consumers can start, stop, join, or leave the network at any time without affecting system stability.
+2. **Request queuing and isolation** – all requests are queued on the AI agent side, and each response is routed back to the originating client.
+3. **Automatic service discovery** – when the AI agent becomes available, all connected clients are notified and can immediately start communication.
 
-Steps to run the demo:
-1. Build the project using Qt Creator or CMake command line. Optionally build `lusan` application.
-2. Start `mtrouter` as a console application or system service on any device in the network to act as message router. Make sure that it has `./config/areg.init` configuration file available in the working directory, and the IP address and port number of the `router` section are correctly set (properties [`router::*::address::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L188) and [`router::*::port::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L189)).
-3. Optionally, start `logcollector` as a console application or system service on any device in the network if you plan to visualize logs in Lusan. Make sure that it has `./config/areg.init` configuration file available in the working directory, and the IP address and port number are correctly set (properties [`logger::*::address::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L197) and [`logger::*::port::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L198)).
-4. Start `aiagent` application on any (powerful) machine in the network to act as an AI Service Provider. 
-   - Make sure that it has `./config/areg.init` configuration file available in the working directory, and the IP addresses and port numbers of the `mtrouter` and optionally of the `logcollector` are correctly set.
-   - The default configuration information of the `mcrouter`(IP-address and port number) are automatically read out from `./config/areg.init` file and displayed on the `Connection` page of the `aiagent`:
+---
+
+#### Steps to Run the Demo
+
+1. **Build the project**  
+   Build using **Qt Creator** or the **CMake command line**. Optionally, build the `lusan` application for log visualization.
+
+2. **Start `mtrouter` (message router)**  
+   Run `mtrouter` as a console application or system service on any machine in the network.
+   - Ensure the `./config/areg.init` file is present in the working directory.
+   - Verify that the router IP address and port are correctly configured using  
+     [`router::*::address::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L188) and  
+     [`router::*::port::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L189).
+
+3. **(Optional) Start `logcollector`**  
+   If you plan to visualize logs in **Lusan**, start `logcollector` as a console application or system service.
+   - Ensure `./config/areg.init` is available.
+   - Configure the logger IP address and port using  
+     [`logger::*::address::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L197) and  
+     [`logger::*::port::tcpip`](https://github.com/aregtech/areg-sdk/blob/master/framework/areg/resources/areg.init#L198).
+
+4. **Start `aiagent` (AI Service Provider)**  
+   Run `aiagent` on a sufficiently powerful machine.
+   - Ensure `./config/areg.init` is present and correctly configured for `mtrouter` (and optionally `logcollector`).
+   - The router configuration is automatically loaded from `areg.init` and displayed on the **Connection** page:
      ![AI Agent Configuration](docs/img/aiagent-config.png)
-   - The list of models are automatically read out from `./models/llama/text/` sub-directory of working directory. The models are copied during build, you can as well add the manually.
-   - Select the model you want to test, select the `Reply Quality` you want to have, optionally you can change other parameters like `Text Length`, `Threads Use`, etc.
-   - Click `Connect` button to connect to `mtrouter` and activate the model with selected parameters.
-   - The model and parameters can be as well changed during runtime by clicking button `Activate`
-   - If models have other location, click button `Browse...` to select another model directory.
-   - When `aiagent` is successfully connected to `mtrouter`, the status is changed and automatically is switched to `AI Agent Chat` page.
-5. Start one or more instances of `edgedevice` application on any (less powerful) machines in the network to act as Service Consumers.   
-   - Make sure that each instance has `./config/areg.init` configuration file available in the working directory, and the IP addresses and port numbers of the `mtrouter` and optionally of the `logcollector` are correctly set.
-   - The default configuration information of the `mcrouter`(IP-address and port number) are automatically read out from `./config/areg.init` file and displayed on the `Connection` page of the `edgedevice`:
-     ![Edge Device Configuration](docs/img/edgedevice-config.png)
-   - Click `Connect` button to connect to `mtrouter`.
-   - When `edgedevice` is successfully connected to `mtrouter`, the status is changed and automatically is switched to `AI Agent Chat` page.
+   - AI models are automatically loaded from `./models/llama/text/` in the working directory. Models are copied during the build, but additional models can be added manually.
+   - Select a model, choose the desired **Reply Quality**, and optionally adjust parameters such as **Text Length** and **Threads Use**.
+   - Click **Connect** to connect to `mtrouter` and activate the model.
+   - Models and parameters can be changed at runtime using the **Activate** button.
+   - If models are stored elsewhere, use **Browse…** to select a different model directory.
+   - Once connected, the application automatically switches to the **AI Agent Chat** page.
 
-Screenshot of the multiple `edgedevice` chat with `aiagent` application:
+5. **Start one or more `edgedevice` instances (Service Consumers)**  
+   Run `edgedevice` on one or more less powerful machines.
+   - Ensure each instance has its own `./config/areg.init` file with correct `mtrouter` (and optional `logcollector`) settings.
+   - The router configuration is automatically displayed on the **Connection** page:
+     ![Edge Device Configuration](docs/img/edgedevice-config.png)
+   - Click **Connect** to join the network.
+   - Once connected, the application automatically switches to the **AI Agent Chat** page.
+
+**Example:** Multiple `edgedevice` instances communicating simultaneously with a single `aiagent`:
 ![Multiple Edge Device Chat](docs/img/multiclient-general.png.png)
 
 > [!TIP]
-> The start of `mtrouter`, `logcollector`, `aiagent`, and `edgedevice` applications can be done in any order. The system will automatically discover services as they become available. You can ask questions without waiting for the reply. Each `edgedevice` instance and each question will receive its own reply from the `aiagent` application.
+> `mtrouter`, `logcollector`, `aiagent`, and `edgedevice` can be started in **any order**. Services are discovered automatically as they become available. Multiple requests can be sent without waiting for previous responses—each `edgedevice` instance and each request receives its own independent reply from the AI agent.
 
 ---
 
