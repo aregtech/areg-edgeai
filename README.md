@@ -242,7 +242,9 @@ This project is at an early stage and actively looking for contributors.
 If you are interested in Edge AI, distributed systems, service oriented architecture,
 or C and C++ development, consider joining the effort.
 Contributions are welcome in code, testing, documentation, integration,
-or design discussions.
+or design discussions. Do not hesitate to open issues, suggest features.
+
+Do not forget to star this and [`areg-sdk`](https://github.com/aregtech/areg-sdk) repositories to show your support.
 
 ---
 
