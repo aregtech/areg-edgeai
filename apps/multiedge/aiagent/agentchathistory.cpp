@@ -272,8 +272,8 @@ void AgentChatHistory::resetHistory(void)
 
 int AgentChatHistory::findEntry(uint32_t sessionId)
 {
-    int startAt = static_cast<int32_t>(mHistory.size() - 1);
-    for (int32_t i = startAt; i >= 0; -- i)
+    int atPos = static_cast<int32_t>(mHistory.size() - 1);
+    for (int32_t i = atPos; i >= 0; -- i)
     {
         if (mHistory[i].sessionId == sessionId)
             return i;
