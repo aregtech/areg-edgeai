@@ -80,9 +80,9 @@ These cases represent the intended direction of the project.
 A single AI agent processes text requests from multiple clients connected over a local network. Clients may join or leave at any time. When the AI agent is online, it accepts requests, queues them internally, and returns each response to the correct client without mixing results.
 
 **Key capabilities demonstrated:**
-1. **No startup order dependency** – the AI Service Provider and Service Consumers can start, stop, join, or leave the network at any time without affecting system stability.
-2. **Request queuing and isolation** – all requests are queued on the AI agent side, and each response is routed back to the originating client.
-3. **Automatic service discovery** – when the AI agent becomes available, all connected clients are notified and can immediately start communication.
+1. **No startup order dependency** -- the AI Service Provider and Service Consumers can start, stop, join, or leave the network at any time without affecting system stability.
+2. **Request queuing and isolation** -- all requests are queued on the AI agent side, and each response is routed back to the originating client.
+3. **Automatic service discovery** -- when the AI agent becomes available, all connected clients are notified and can immediately start communication.
 
 ---
 
@@ -114,7 +114,7 @@ A single AI agent processes text requests from multiple clients connected over a
    - Select a model, choose the desired **Reply Quality**, and optionally adjust parameters such as **Text Length** and **Threads Use**.
    - Click **Connect** to connect to `mtrouter` and activate the model.
    - Models and parameters can be changed at runtime using the **Activate** button.
-   - If models are stored elsewhere, use **Browse…** to select a different model directory.
+   - If models are stored elsewhere, use **Browse...** to select a different model directory.
    - Once connected, the application automatically switches to the **AI Agent Chat** page.
 
 5. **Start one or more `edgedevice` instances (Service Consumers)**  
