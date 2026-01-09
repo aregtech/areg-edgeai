@@ -289,8 +289,9 @@ void AgentChatHistory::resetHistory(void)
 
 const QString & AgentChatHistory::getRowMessage(int row) const
 {
+    static const QString _empty;
     if ((row < 0) || (row >= static_cast<int>(mHistory.size())))
-        return QString();
+        return _empty;
 
     const sChatEntry& entry = mHistory[row];
     return entry.chatMessage;

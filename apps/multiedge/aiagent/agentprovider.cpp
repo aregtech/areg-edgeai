@@ -101,6 +101,14 @@ void AgentProvider::shutdownServiceInterface(Component& holder)
 {
     LOG_SCOPE(multiedge_aiagent_AgentProvider_shutdownServiceInterface);
 
+    invalidateEdgeAgent();
+    invalidateQueueSize();
+    invalidateActiveModel();
+
+    emit signalEdgeAgent(NEMultiEdge::AgentUnknown);
+    emit signalQueueSize(0);
+    emit signalActiveModelChanged(QString("N/A"));
+
     mWorkerThread = nullptr;
     emit signalServiceStarted(false);
     
@@ -125,7 +133,7 @@ void AgentProvider::requestProcessText(unsigned int sessionId, unsigned int agen
     LOG_DBG("Requested to process text. Agent ID [ %u ], session ID [ %u ], agent state [ %s ]", agentId, sessionId, mAgentState == eAgentState::StateReady ? "Ready" : "Busy");
 
     emit signalQueueSize(static_cast<uint32_t>(mListSessions.size()));
-    emit signalTextRequested(sessionId, agentId, QString::fromStdString(textProcess.getString()), DateTime::getNow());
+    emit signalTextRequested(unblock, sessionId, agentId, QString::fromStdString(textProcess.getString()), DateTime::getNow());
     if (mAgentState == eAgentState::StateReady)
     {
         mAgentState = eAgentState::StateBusy;
@@ -161,7 +169,7 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
         LOG_DBG("Processed text....");
         const SharedBuffer& evData = data.getData();
         String reply;
-        uint32_t sessionId;
+        uint32_t sessionId{0xFFFFFFFFu};
         evData >> sessionId;
         evData >> reply;
 
@@ -170,7 +178,7 @@ void AgentProvider::processEvent(const AgentProcessorEventData& data)
             const sTextPrompt& prompt = mListSessions.front();
             ASSERT(sessionId == prompt.sessionId);
 
-            emit signalTextProcessed(prompt.agentSession, prompt.agentId, QString::fromStdString(reply.getData()), DateTime::getNow());
+            emit signalTextProcessed(sessionId, prompt.agentSession, prompt.agentId, QString::fromStdString(reply.getData()), DateTime::getNow());
             if (prepareResponse(sessionId))
             {
                 LOG_DBG("Prepared response, sending response to the Agent [ %u ], session [ %u ], response text length [ %u ]"

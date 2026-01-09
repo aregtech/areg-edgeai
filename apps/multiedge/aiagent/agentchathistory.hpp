@@ -62,8 +62,9 @@ public:
         QString         chatMessage {};
         uint64_t        chatTime    {0u};
         eMessageStatus  chatStatus  {eMessageStatus::StatusInvalid};
-        uint32_t        chatId      {0xFFFFFFFF};
-        uint32_t        chatSeqId   {0xFFFFFFFF};
+        uint32_t        sessionId   {0xFFFFFFFFu};
+        uint32_t        chatId      {0xFFFFFFFFu};
+        uint32_t        chatSeqId   {0xFFFFFFFFu};
     };
 
     static constexpr    uint32_t    INIT_LENGTH {1000u};
@@ -74,13 +75,13 @@ public:
     explicit AgentChatHistory(QObject *parent = nullptr);
     
 public:
-    void addRequest(const QString& question, uint32_t chatId, uint32_t seqId);
+    void addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint32_t sessionId);
     
-    void addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint64_t when);
+    void addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint32_t sessionId, uint64_t when);
     
-    void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId);
+    void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint32_t sessionId);
     
-    void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint64_t when);
+    void addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint32_t sessionId, uint64_t when);
     
     void addFailure(const QString& text);
     
@@ -105,7 +106,7 @@ private:
     
     QString displayName(const sChatEntry & entry, uint64_t next, int column) const;
     
-    int findEntry(uint32_t seqId, int32_t startAt);
+    int findEntry(uint32_t sessionId);
 
 private:
     ChatHistory mHistory;
