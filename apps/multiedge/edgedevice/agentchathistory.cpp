@@ -53,8 +53,8 @@ namespace {
 
     constexpr int _widths[static_cast<int>(AgentChatHistory::ColumnCount)]
     {
-          50
-        , 50
+          30
+        , 30
         , 100
         , 250
     };
@@ -83,7 +83,7 @@ QVariant AgentChatHistory::headerData(int section, Qt::Orientation orientation, 
             return QVariant(_columns[section]);
 
         case Qt::ItemDataRole::TextAlignmentRole:
-            return Qt::AlignCenter;
+            return (section == static_cast<int>(eChatColumn::ColumnMessage) ? Qt::AlignCenter : Qt::AlignLeft);
 
         case Qt::ItemDataRole::FontRole:
         {
