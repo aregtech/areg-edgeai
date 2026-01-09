@@ -36,13 +36,10 @@ traceable, and ready for production from the start.
 
 ## Project Building
 
-
-## Project Building
-
 Projects in this repository are built with the [**AREG Framework**](https://github.com/aregtech/areg-sdk), [**Qt**](https://www.qt.io/development/download-qt-installer-oss) for UI development, and the [**llama.cpp**](https://github.com/ggml-org/llama.cpp) Edge AI engine. **CMake** is used as the primary build system, and both `areg` and `llama.cpp` are automatically downloaded and built during the build process. Building with **Qt Creator** is recommended, though command-line builds are fully supported if the required Qt packages are installed. 
 
 > [!IMPORTANT]
-> To run the applications, you must have AI models compatible with `llama.cpp` (available from [Hugging Face](https://huggingface.co/models), filtered by `llama.cpp` and `TextGeneration`).
+> To run the applications, you must have AI models compatible with `llama.cpp`. Compatible models are available on [Hugging Face](https://huggingface.co/models); filter by `llama.cpp` and `TextGeneration`. For convenience, place the models in the `./models/llama/text` directory so they are automatically copied to the application working directory during build.
 
 ### Requirements
 
@@ -77,7 +74,8 @@ These cases represent the intended direction of the project.
 
 ### Use Case 1: One AI Agent Serving Multiple Clients
 
-**This use case is fully functional and can be tested by running the `aiagent` application as the AI Service Provider and one or more `edgedevice` applications as Service Consumers (device simulations).**
+> [!NOTE]
+> **This use case is fully functional and can be tested by running the `aiagent` application as the AI Service Provider and one or more `edgedevice` applications as Service Consumers (device simulations).**
 
 A single AI agent processes text requests from multiple clients connected over a local network. Clients may join or leave at any time. When the AI agent is online, it accepts requests, queues them internally, and returns each response to the correct client without mixing results.
 
@@ -93,7 +91,7 @@ A single AI agent processes text requests from multiple clients connected over a
 1. **Build the project**  
    Build using **Qt Creator** or the **CMake command line**. Optionally, build the `lusan` application for log visualization.
 
-2. **Start `mtrouter` (message router)**  
+2. **Start `mtrouter` (multi-target router)**  
    Run `mtrouter` as a console application or system service on any machine in the network.
    - Ensure the `./config/areg.init` file is present in the working directory.
    - Verify that the router IP address and port are correctly configured using  
@@ -110,9 +108,9 @@ A single AI agent processes text requests from multiple clients connected over a
 4. **Start `aiagent` (AI Service Provider)**  
    Run `aiagent` on a sufficiently powerful machine.
    - Ensure `./config/areg.init` is present and correctly configured for `mtrouter` (and optionally `logcollector`).
-   - The router configuration is automatically loaded from `areg.init` and displayed on the **Connection** page:
+   - The router configuration is automatically loaded from `areg.init` and displayed on the **Router Connection** page:
      ![AI Agent Configuration](docs/img/aiagent-config.png)
-   - AI models are automatically loaded from `./models/llama/text/` in the working directory. Models are copied during the build, but additional models can be added manually.
+   - AI models located in the `./models/llama/text/` folder of working directory are automatically listed.
    - Select a model, choose the desired **Reply Quality**, and optionally adjust parameters such as **Text Length** and **Threads Use**.
    - Click **Connect** to connect to `mtrouter` and activate the model.
    - Models and parameters can be changed at runtime using the **Activate** button.
@@ -122,16 +120,16 @@ A single AI agent processes text requests from multiple clients connected over a
 5. **Start one or more `edgedevice` instances (Service Consumers)**  
    Run `edgedevice` on one or more less powerful machines.
    - Ensure each instance has its own `./config/areg.init` file with correct `mtrouter` (and optional `logcollector`) settings.
-   - The router configuration is automatically displayed on the **Connection** page:
+   - The router configuration is automatically displayed on the **Router Connection** page:
      ![Edge Device Configuration](docs/img/edgedevice-config.png)
    - Click **Connect** to join the network.
    - Once connected, the application automatically switches to the **AI Agent Chat** page.
 
 **Example:** Multiple `edgedevice` instances communicating simultaneously with a single `aiagent`:
-![Multiple Edge Device Chat](docs/img/multiclient-general.png.png)
+![Multiple Edge Device Chat](./docs/img/multiclient-general.png)
 
 > [!TIP]
-> `mtrouter`, `logcollector`, `aiagent`, and `edgedevice` can be started in **any order**. Services are discovered automatically as they become available. Multiple requests can be sent without waiting for previous responses—each `edgedevice` instance and each request receives its own independent reply from the AI agent.
+> `mtrouter`, `logcollector`, `aiagent`, and `edgedevice` can be started in **any order**. Services are discovered automatically as they become available. Multiple requests can be sent without waiting for previous responses, each `edgedevice` instance and each request receives its own independent reply from the AI agent.
 
 ---
 
