@@ -206,62 +206,51 @@ QString AgentChatHistory::displayName(const sChatEntry & entry, uint64_t next, i
     }
 }
 
-void AgentChatHistory::addRequest(const QString& question, uint32_t chatId, uint32_t seqId)
+void AgentChatHistory::addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint32_t sessionId)
 {
-    addRequest(question, chatId, seqId, DateTime::getNow());    
+    addRequest(question, chatId, seqId, sessionId, DateTime::getNow());
 }
 
-void AgentChatHistory::addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint64_t when)
+void AgentChatHistory::addRequest(const QString& question, uint32_t chatId, uint32_t seqId, uint32_t sessionId, uint64_t when)
 {
     beginInsertRows(QModelIndex(), mHistory.size(), mHistory.size());
-    sChatEntry entry{eChatSource::SourceHuman, question, when, eMessageStatus::StatusPending, chatId, seqId};
+    sChatEntry entry{eChatSource::SourceHuman, question, when, eMessageStatus::StatusPending, sessionId, chatId, seqId};
     mHistory.push_back(entry);
     endInsertRows();
 }
 
-void AgentChatHistory::addResponse(const QString& reply, uint32_t chatId, uint32_t seqId)
+void AgentChatHistory::addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint32_t sessionId)
 {
-    addResponse(reply, chatId, seqId, DateTime::getNow());
+    addResponse(reply, chatId, seqId, sessionId, DateTime::getNow());
 }
 
-void AgentChatHistory::addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint64_t when)
+void AgentChatHistory::addResponse(const QString& reply, uint32_t chatId, uint32_t seqId, uint32_t sessionId, uint64_t when)
 {
-    sChatEntry entry{eChatSource::SourceEdgeAi, reply, when, eMessageStatus::StatusReplied, chatId, seqId};
-    int32_t idx  = static_cast<int32_t>(seqId * 2);
+    sChatEntry entry{eChatSource::SourceEdgeAi, reply, when, eMessageStatus::StatusReplied, sessionId, chatId, seqId};
     int32_t size = static_cast<int32_t>(mHistory.size());
-    if (idx >= size)
+    int32_t idx = findEntry(sessionId);
+    if (idx >= 0)
+    {
+        mHistory[idx].chatStatus = eMessageStatus::StatusReplied;
+        if ((idx + 1) == size)
+        {
+            beginInsertRows(QModelIndex(), mHistory.size(), mHistory.size());
+            mHistory.push_back(entry);
+        }
+        else
+        {
+            beginInsertRows(QModelIndex(), idx + 1, idx + 1);
+            mHistory.insert(mHistory.begin() + idx + 1, entry);
+        }
+
+        endInsertRows();
+    }
+    else
     {
         beginInsertRows(QModelIndex(), mHistory.size(), mHistory.size());
         entry.chatStatus = eMessageStatus::StatusError;
         mHistory.push_back(entry);
         endInsertRows();
-    }
-    else
-    {
-        idx = findEntry(seqId, idx);
-        if (idx >= 0)
-        {
-            mHistory[idx].chatStatus = eMessageStatus::StatusReplied;
-            if ((idx + 1) == size)
-            {
-                beginInsertRows(QModelIndex(), mHistory.size(), mHistory.size());
-                mHistory.push_back(entry);
-            }
-            else
-            {
-                beginInsertRows(QModelIndex(), idx + 1, idx + 1);
-                mHistory.insert(mHistory.begin() + idx + 1, entry);
-            }
-            
-            endInsertRows();
-        }
-        else
-        {
-            beginInsertRows(QModelIndex(), mHistory.size(), mHistory.size());
-            entry.chatStatus = eMessageStatus::StatusError;
-            mHistory.push_back(entry);
-            endInsertRows();
-        }
     }
 }
 
@@ -281,12 +270,12 @@ void AgentChatHistory::resetHistory(void)
     endResetModel();
 }
 
-int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)
+int AgentChatHistory::findEntry(uint32_t sessionId)
 {
-    startAt = startAt >= static_cast<int32_t>(mHistory.size()) ? static_cast<int32_t>(mHistory.size()) - 1 : startAt;
-    for (int32_t i = startAt; i >= 0; -- i)
+    int atPos = static_cast<int32_t>(mHistory.size() - 1);
+    for (int32_t i = atPos; i >= 0; -- i)
     {
-        if (mHistory[i].chatSeqId == seqId)
+        if (mHistory[i].sessionId == sessionId)
             return i;
     }
     
@@ -294,8 +283,9 @@ int AgentChatHistory::findEntry(uint32_t seqId, int32_t startAt)
 }
 const QString& AgentChatHistory::getRowMessage(int row) const
 {
+    static const QString _empty;
     if ((row < 0) || (row >= static_cast<int>(mHistory.size())))
-        return QString();
+        return _empty;
 
     const sChatEntry& entry = mHistory[row];
     return entry.chatMessage;
