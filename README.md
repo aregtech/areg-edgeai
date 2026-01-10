@@ -179,7 +179,7 @@ with a defined personality.
 A central controller introduces scenarios such as investigating a mystery,
 planning a project, or debating a topic.
 Agents exchange messages according to predefined rules and react to each
-other’s outputs.
+other's outputs.
 
 **Key features to demonstrate:**
 1. Many independent agents interacting in a shared context.
@@ -225,7 +225,7 @@ and agents may participate in more than one room concurrently.
 2. Every agent can act as both service provider and service consumer.
 3. Mesh style communication. Even if the register application shuts down, existing discussion rooms continue to function. Texts do not leak between rooms and each topic remains isolated.
 4. Fault tolerance. Any agent or the register can disconnect and reconnect without interrupting ongoing communication among other agents.
-5. Horizontal and vertical use. Agents can consume each other’s services or provide services to each other without restrictions.
+5. Horizontal and vertical use. Agents can consume each other's services or provide services to each other without restrictions.
 
 
 > [!NOTE]
